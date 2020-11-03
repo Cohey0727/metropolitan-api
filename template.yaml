@@ -63,7 +63,12 @@ Resources:
       SSESpecification:
         SSEEnabled: True
       TableName: !Ref TableName
-
+  TicketsWebSocket:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: TicketsWebSocket
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: "$request.body.action"
 Outputs:
   HelloWorldApi:
     Description: "API Gateway endpoint URL for Prod stage for Hello World function"
