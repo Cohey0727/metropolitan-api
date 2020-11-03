@@ -88,6 +88,21 @@ Resources:
         - - 'integrations'
           - !Ref OnDisconnectInteg
 
+  Deployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+    - OnConnectRoute
+    - OnDisconnectRoute
+    Properties:
+      ApiId: !Ref TicketsWebSocket
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: prod
+      Description: Production Stage
+      DeploymentId: !Ref Deployment
+      ApiId: !Ref TicketsWebSocket
+
   TicktesTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -121,6 +136,6 @@ Resources:
 
 Outputs:
 
-  TicktesTableArn:
-    Description: "Ticktes table ARN"
-    Value: !GetAtt TicktesTable.Arn
+  TicketsWebSocketURI:
+    Description: "The WSS Protocol URI to connect to"
+    Value: !Join [ '', [ 'wss://', !Ref TicketsWebSocket, '.execute-api.',!Ref 'AWS::Region','.amazonaws.com/',!Ref Stage] ]
