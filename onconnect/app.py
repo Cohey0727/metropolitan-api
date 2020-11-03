@@ -13,7 +13,7 @@ connection_talble = boto3.resource('dynamodb')
 
 def lambda_handler(event, context):
     project_id = event['queryStringParameters'].get('project_id')
-    connection_id = event['requestContext'].get('connectionId')
+    connection_id = context.get('connectionId')
     logger.info(f'TalbeName: {table_name}, projectId: {project_id}')
     connection_talble.put_item(Item={
         "projectId": project_id,

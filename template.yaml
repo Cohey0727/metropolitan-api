@@ -120,7 +120,7 @@ Resources:
           TableName:  
             Fn::Sub:
               ProjectConnections_${StageName}
-  OnConnectInteg:
+  ConnectInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref TicketsWebSocket
@@ -129,17 +129,17 @@ Resources:
       IntegrationUri: 
         Fn::Sub:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnConnectFunction.Arn}/invocations
-  OnConnectRoute:
+  ConnectRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref TicketsWebSocket
       RouteKey: $connect
       AuthorizationType: NONE
-      OperationName: OnConnectRoute
+      OperationName: ConnectRoute
       Target: !Join
         - '/'
         - - 'integrations'
-          - !Ref OnConnectInteg
+          - !Ref ConnectInteg
 
   OnDisconnectFunction:
     Type: AWS::Serverless::Function
@@ -157,7 +157,7 @@ Resources:
           TableName:  
             Fn::Sub:
               ProjectConnections_${StageName}
-  OnDisconnectInteg:
+  DisconnectInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref TicketsWebSocket
@@ -166,23 +166,23 @@ Resources:
       IntegrationUri: 
         Fn::Sub:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnDisconnectFunction.Arn}/invocations
-  OnDisconnectRoute:
+  DisconnectRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref TicketsWebSocket
       RouteKey: $disconnect
       AuthorizationType: NONE
-      OperationName: OnDisconnectRoute
+      OperationName: DisconnectRoute
       Target: !Join
         - '/'
         - - 'integrations'
-          - !Ref OnDisconnectInteg
+          - !Ref DisconnectInteg
 
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
-    - OnConnectRoute
-    - OnDisconnectRoute
+    - ConnectRoute
+    - DisconnectRoute
     Properties:
       ApiId: !Ref TicketsWebSocket
   Stage:
