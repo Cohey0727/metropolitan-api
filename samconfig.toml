@@ -8,4 +8,4 @@ s3_prefix = "metropolitan"
 region = "ap-northeast-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "TableName=\"simple_metroplitan\""
+parameter_overrides = "TicketTableName=\"ProjectTickets\" ConnectionTableName=\"ProjectConnections\""

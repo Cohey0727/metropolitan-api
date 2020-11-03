@@ -5,9 +5,17 @@ Description: >
   Sample SAM Template for metropolitan
 
 Parameters:
-  TableName:
+  TicketTableName:
     Type: String
-    Default: 'simple_metroplitan'
+    Default: ProjectTickets
+    Description: (Required) The name of the new DynamoDB to store connection identifiers for each connected clients. Minimum 3 characters
+    MinLength: 3
+    MaxLength: 50
+    AllowedPattern: ^[A-Za-z_]+$
+    ConstraintDescription: 'Required. Can be characters and underscore only. No numbers or special characters allowed.'
+  ConnectionTableName:
+    Type: String
+    Default: ProjectConnections
     Description: (Required) The name of the new DynamoDB to store connection identifiers for each connected clients. Minimum 3 characters
     MinLength: 3
     MaxLength: 50
@@ -15,6 +23,57 @@ Parameters:
     ConstraintDescription: 'Required. Can be characters and underscore only. No numbers or special characters allowed.'
 
 Resources:
+  TicktesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TicketTableName
+      AttributeDefinitions:
+      - AttributeName: projectId
+        AttributeType: S
+      - AttributeName: ticketId
+        AttributeType: S
+      - AttributeName: currentPosition
+        AttributeType: S
+      KeySchema:
+      - AttributeName: projectId
+        KeyType: HASH
+      - AttributeName: ticketId
+        KeyType: RANGE
+      LocalSecondaryIndexes:
+      - IndexName: currentPositionIndex
+        KeySchema:
+          - AttributeName: projectId
+            KeyType: HASH
+          - AttributeName: currentPosition
+            KeyType: RANGE
+        Projection:
+          ProjectionType: KEYS_ONLY
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      SSESpecification:
+        SSEEnabled: True
+
+  ConnetionTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref ConnectionTableName
+      AttributeDefinitions:
+      - AttributeName: projectId
+        AttributeType: S
+      - AttributeName: connectionId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: projectId
+        KeyType: HASH
+      - AttributeName: connectionId
+        KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      SSESpecification:
+        SSEEnabled: True
+
   TicketsWebSocket:
     Type: AWS::ApiGatewayV2::Api
     Properties:
@@ -30,10 +89,10 @@ Resources:
       Runtime: python3.8
       Environment:
         Variables:
-          TABLE_NAME: !Ref TableName
+          TABLE_NAME: !Ref ConnectionTableName
       Policies:
       - DynamoDBCrudPolicy:
-          TableName: !Ref TableName
+          TableName: !Ref ConnectionTableName
   OnConnectInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -63,10 +122,10 @@ Resources:
       Runtime: python3.8
       Environment:
         Variables:
-          TABLE_NAME: !Ref TableName
+          TABLE_NAME: !Ref ConnectionTableName
       Policies:
       - DynamoDBCrudPolicy:
-          TableName: !Ref TableName
+          TableName: !Ref ConnectionTableName
   OnDisconnectInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -103,36 +162,6 @@ Resources:
       DeploymentId: !Ref Deployment
       ApiId: !Ref TicketsWebSocket
 
-  TicktesTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      AttributeDefinitions:
-      - AttributeName: projectId
-        AttributeType: S
-      - AttributeName: ticketId
-        AttributeType: S
-      - AttributeName: currentPosition
-        AttributeType: S
-      KeySchema:
-      - AttributeName: projectId
-        KeyType: HASH
-      - AttributeName: ticketId
-        KeyType: RANGE
-      LocalSecondaryIndexes:
-      - IndexName: currentPositionIndex
-        KeySchema:
-          - AttributeName: projectId
-            KeyType: HASH
-          - AttributeName: currentPosition
-            KeyType: RANGE
-        Projection:
-          ProjectionType: KEYS_ONLY
-      ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
-      SSESpecification:
-        SSEEnabled: True
-      TableName: !Ref TableName
 
 Outputs:
 
