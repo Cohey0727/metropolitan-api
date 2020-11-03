@@ -33,7 +33,7 @@ Resources:
           Properties:
             Path: /hello
             Method: get
-  ConnectionsTable:
+  TicktesTable:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
@@ -74,6 +74,6 @@ Outputs:
   HelloWorldFunctionIamRole:
     Description: "Implicit IAM Role created for Hello World function"
     Value: !GetAtt HelloWorldFunctionRole.Arn
-  ConnectionsTableArn:
-    Description: "Connections table ARN"
-    Value: !GetAtt ConnectionsTable.Arn
+  TicktesTableArn:
+    Description: "Ticktes table ARN"
+    Value: !GetAtt TicktesTable.Arn
