@@ -196,6 +196,6 @@ Outputs:
     Description: "The WSS Protocol URI to connect to"
     Value: !Join [ '', [ 'wss://', !Ref TicketsWebSocket, '.execute-api.',!Ref 'AWS::Region','.amazonaws.com/',!Ref Stage] ]
 
-  HelloWorldApi:
+  TicketApi:
     Description: "API Gateway endpoint URL for Prod stage for Hello World function"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/ticktes"
