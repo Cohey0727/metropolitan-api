@@ -86,12 +86,16 @@ Resources:
         Variables:
           TABLE_NAME:  
             Fn::Sub:
-              ProjectConnections_${StageName}
+              ProjectTickets_${StageName}
       Policies:
       - DynamoDBCrudPolicy:
           TableName:  
             Fn::Sub:
               ProjectConnections_${StageName}
+      - DynamoDBCrudPolicy:
+          TableName:  
+            Fn::Sub:
+              ProjectTickets_${StageName}
 
   TicketsWebSocket:
     Type: AWS::ApiGatewayV2::Api
@@ -198,4 +202,4 @@ Outputs:
 
   TicketApi:
     Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/ticktes"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/tickets"
