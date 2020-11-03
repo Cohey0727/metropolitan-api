@@ -2,10 +2,10 @@ version = 0.1
 [default]
 [default.deploy]
 [default.deploy.parameters]
-stack_name = "metropolitan"
+stack_name = "metroplitan"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1u8iz7pasjof0"
-s3_prefix = "metropolitan"
+s3_prefix = "metroplitan"
 region = "ap-northeast-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "TicketTableName=\"ProjectTickets\" ConnectionTableName=\"ProjectConnections\""
+parameter_overrides = "StageName=\"production\""

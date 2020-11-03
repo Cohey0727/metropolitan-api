@@ -5,28 +5,22 @@ Description: >
   Sample SAM Template for metropolitan
 
 Parameters:
-  TicketTableName:
+  StageName:
     Type: String
-    Default: ProjectTickets
+    Default: production
     Description: (Required) The name of the new DynamoDB to store connection identifiers for each connected clients. Minimum 3 characters
     MinLength: 3
-    MaxLength: 50
+    MaxLength: 16
     AllowedPattern: ^[A-Za-z_]+$
-    ConstraintDescription: 'Required. Can be characters and underscore only. No numbers or special characters allowed.'
-  ConnectionTableName:
-    Type: String
-    Default: ProjectConnections
-    Description: (Required) The name of the new DynamoDB to store connection identifiers for each connected clients. Minimum 3 characters
-    MinLength: 3
-    MaxLength: 50
-    AllowedPattern: ^[A-Za-z_]+$
-    ConstraintDescription: 'Required. Can be characters and underscore only. No numbers or special characters allowed.'
+    ConstraintDescription: 'Required. Can be characters and underscore only. No numbers or special characters allowed.'    
 
 Resources:
   TicktesTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Ref TicketTableName
+      TableName:
+        Fn::Sub:
+          ProjectTickets_${StageName}
       AttributeDefinitions:
       - AttributeName: projectId
         AttributeType: S
@@ -57,7 +51,9 @@ Resources:
   ConnetionTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Ref ConnectionTableName
+      TableName: 
+        Fn::Sub:
+          ProjectConnections_${StageName}
       AttributeDefinitions:
       - AttributeName: projectId
         AttributeType: S
@@ -89,10 +85,14 @@ Resources:
       Runtime: python3.8
       Environment:
         Variables:
-          TABLE_NAME: !Ref ConnectionTableName
+          TABLE_NAME:  
+            Fn::Sub:
+              ProjectConnections_${StageName}
       Policies:
       - DynamoDBCrudPolicy:
-          TableName: !Ref ConnectionTableName
+          TableName:  
+            Fn::Sub:
+              ProjectConnections_${StageName}
   OnConnectInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -122,10 +122,14 @@ Resources:
       Runtime: python3.8
       Environment:
         Variables:
-          TABLE_NAME: !Ref ConnectionTableName
+          TABLE_NAME:
+            Fn::Sub:
+              ProjectConnections_${StageName}
       Policies:
       - DynamoDBCrudPolicy:
-          TableName: !Ref ConnectionTableName
+          TableName:  
+            Fn::Sub:
+              ProjectConnections_${StageName}
   OnDisconnectInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -157,7 +161,7 @@ Resources:
   Stage:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
-      StageName: prod
+      StageName: !Ref StageName
       Description: Production Stage
       DeploymentId: !Ref Deployment
       ApiId: !Ref TicketsWebSocket
