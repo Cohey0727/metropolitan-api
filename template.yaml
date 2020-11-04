@@ -140,6 +140,14 @@ Resources:
         - '/'
         - - 'integrations'
           - !Ref ConnectInteg
+  OnConnectPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - TicketsWebSocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref OnConnectFunction
+      Principal: apigateway.amazonaws.com
 
   OnDisconnectFunction:
     Type: AWS::Serverless::Function
@@ -177,6 +185,14 @@ Resources:
         - '/'
         - - 'integrations'
           - !Ref DisconnectInteg
+  OnDisconnectPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - TicketsWebSocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref OnDisconnectFunction
+      Principal: apigateway.amazonaws.com
 
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment

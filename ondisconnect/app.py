@@ -8,7 +8,7 @@ logger = logging.getLogger()
 logger.setLevel('INFO')
 
 table_name = os.environ.get('TABLE_NAME')
-connection_talble = boto3.resource('dynamodb')
+connection_talble = boto3.resource('dynamodb').Table(table_name)
 
 
 def lambda_handler(event, context):
