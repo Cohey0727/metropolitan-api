@@ -1,8 +1,8 @@
 import boto3
-from boto3.dynamodb.conditions import Key
 import json
 import logging
 import os
+from boto3.dynamodb.conditions import Key
 
 logger = logging.getLogger()
 logger.setLevel('INFO')
@@ -10,10 +10,13 @@ logger.setLevel('INFO')
 table_name = os.environ.get('TABLE_NAME')
 connection_talble = boto3.resource('dynamodb').Table(table_name)
 
-
 def lambda_handler(event, context):
-    project_id = event['queryStringParameters'].get('project_id')
     connection_id = event['requestContext'].get('connectionId')
-    logger.info(f'TalbeName: {table_name}, projectId: {project_id}')
-    connection_talble.delete(Key={'projectId': project_id, 'connectionId': connection_id})
-    return {"statusCode": 200, "body": "Connected."}
+    res = connection_talble.query(IndexName='connectionIndex',  KeyConditionExpression=Key('connectionId').eq(connection_id))
+
+    with connection_talble.batch_writer(overwrite_by_pkeys=['projectId', 'connectionId']) as batch:
+        for coneetionRecord in res['Items']:
+            project_id = coneetionRecord['projectId']
+            batch.delete_item(Key={'projectId': project_id, 'connectionId': connection_id})
+
+    return {"statusCode": 200, "body": "Disconnected."}

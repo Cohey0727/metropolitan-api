@@ -47,7 +47,9 @@ Resources:
         WriteCapacityUnits: 5
       SSESpecification:
         SSEEnabled: True
-
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+  
   ConnetionTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -69,7 +71,19 @@ Resources:
         WriteCapacityUnits: 5
       SSESpecification:
         SSEEnabled: True
+      GlobalSecondaryIndexes:
+      - IndexName: connectionIndex
+        KeySchema:
+        - AttributeName: connectionId
+          KeyType: HASH
+        Projection:
+          ProjectionType: KEYS_ONLY
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+  
 
+  
   TicketApi:
     Type: AWS::Serverless::Function
     Properties:
@@ -209,6 +223,20 @@ Resources:
       DeploymentId: !Ref Deployment
       ApiId: !Ref TicketsWebSocket
 
+  TicketsProgateFunc:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 10
+      CodeUri: tickets/
+      Handler: ticket_progate.lambda_handler
+      Runtime: python3.8
+      Events:
+        TicketsProgateFunc:
+          Type: DynamoDB
+          Properties:
+            Stream: 
+              Fn::GetAtt: [ TicktesTable, StreamArn ]
+            StartingPosition: LATEST
 
 Outputs:
 
