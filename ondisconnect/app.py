@@ -15,8 +15,8 @@ def lambda_handler(event, context):
     res = connection_talble.scan(FilterExpression=Key('connectionId').eq(connection_id))
 
     with connection_talble.batch_writer(overwrite_by_pkeys=['projectId', 'connectionId']) as batch:
-        for coneetionRecord in res['Items']:
-            project_id = coneetionRecord['projectId']
+        for connection_record in res['Items']:
+            project_id = connection_record['projectId']
             batch.delete_item(Key={'projectId': project_id, 'connectionId': connection_id})
 
     return {'statusCode': 200, 'body': 'Disconnected.'}

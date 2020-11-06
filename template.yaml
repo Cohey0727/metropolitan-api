@@ -226,6 +226,7 @@ Resources:
           TICKET_TABLE_NAME:
             Fn::Sub:
               ProjectTickets_${StageName}
+          WS_ENDPOINT: !Join [ '', ['https://', !Ref TicketsWebSocket, '.execute-api.',!Ref 'AWS::Region','.amazonaws.com/',!Ref Stage] ]
       Policies:
       - DynamoDBCrudPolicy:
           TableName:  
