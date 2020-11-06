@@ -16,7 +16,7 @@ def lambda_handler(event, context):
     connection_id = event['requestContext'].get('connectionId')
     logger.info(f'TalbeName: {table_name}, projectId: {project_id}')
     connection_talble.put_item(Item={
-        "projectId": project_id,
-        "connectionId": connection_id,
+        'projectId': project_id,
+        'connectionId': connection_id,
     })
-    return {"statusCode": 200, "body": "Connected."}
+    return {'statusCode': 200, 'body': 'Connected.'}

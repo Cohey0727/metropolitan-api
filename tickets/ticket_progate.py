@@ -7,8 +7,8 @@ from boto3.dynamodb.conditions import Key
 logger = logging.getLogger()
 logger.setLevel('INFO')
 
-connetion_table_name = os.environ.get('CONNETION_TABLE_NAME')
-connection_talble = boto3.resource('dynamodb').Table(connetion_table_name)
+connection_table_name = os.environ.get('CONNECTION_TABLE_NAME')
+connection_talble = boto3.resource('dynamodb').Table(connection_table_name)
 
 ticket_table_name = os.environ.get('TICKET_TABLE_NAME')
 ticket_talble = boto3.resource('dynamodb').Table(ticket_table_name)
@@ -39,13 +39,14 @@ def progate_project_tickets(project_id: int, batch):
         KeyConditionExpression=Key('projectId').eq(project_id)
     )
 
-    for coneetion_record in connection_data['Items']:
-        connection_id = coneetion_record['connectionId']
+    for connection_record in connection_data['Items']:
+        connection_id = connection_record['connectionId']
         try:
-            tickets_ws.post_to_connetion(
-                Data=json.dumps(ticket_data),
+            tickets_ws.post_to_connection(
+                Data=json.dumps(ticket_data['Items']),
                 ConnectionId=connection_id
             )
         except:
             batch.delete_item(
-                Key={'projectId': project_id, 'connectionId': connection_id})
+                Key={'projectId': project_id, 'connectionId': connection_id}
+            )

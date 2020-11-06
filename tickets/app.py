@@ -19,6 +19,6 @@ def lambda_handler(event, context):
     )
 
     return {
-        "statusCode": 200,
-        "body": json.dumps(ticket_data),
+        'statusCode': 200,
+        'body': json.dumps(ticket_data['Items']),
     }
