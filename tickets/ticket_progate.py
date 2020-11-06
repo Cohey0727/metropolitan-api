@@ -7,8 +7,10 @@ from boto3.dynamodb.conditions import Key
 logger = logging.getLogger()
 logger.setLevel('INFO')
 
-table_name = os.environ.get('TABLE_NAME')
-ticket_talble = boto3.resource('dynamodb').Table(table_name)
+connetion_table_name = os.environ.get('CONNETION_TABLE_NAME')
+ticket_table_name = os.environ.get('TICKET_TABLE_NAME')
+connetion_talble = boto3.resource('dynamodb').Table(connetion_table_name)
+ticket_talble = boto3.resource('dynamodb').Table(ticket_table_name)
 
 
 def lambda_handler(event, context):

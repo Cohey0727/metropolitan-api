@@ -71,18 +71,6 @@ Resources:
         WriteCapacityUnits: 5
       SSESpecification:
         SSEEnabled: True
-      GlobalSecondaryIndexes:
-      - IndexName: connectionIndex
-        KeySchema:
-        - AttributeName: connectionId
-          KeyType: HASH
-        Projection:
-          ProjectionType: KEYS_ONLY
-        ProvisionedThroughput:
-          ReadCapacityUnits: 5
-          WriteCapacityUnits: 5
-  
-
   
   TicketApi:
     Type: AWS::Serverless::Function
@@ -230,6 +218,23 @@ Resources:
       CodeUri: tickets/
       Handler: ticket_progate.lambda_handler
       Runtime: python3.8
+      Environment:
+        Variables:
+          CONNETION_TABLE_NAME:
+            Fn::Sub:
+              ProjectConnections_${StageName}
+          TICKET_TABLE_NAME:
+            Fn::Sub:
+              ProjectTickets_${StageName}
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:  
+            Fn::Sub:
+              ProjectConnections_${StageName}
+      - DynamoDBCrudPolicy:
+          TableName:  
+            Fn::Sub:
+              ProjectTickets_${StageName}
       Events:
         TicketsProgateFunc:
           Type: DynamoDB
