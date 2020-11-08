@@ -94,8 +94,6 @@ class TicketApi(RestApi):
             expression_names[f'#{key}'] = key
 
         update_expression = update_expression[:-1]
-        logging.info(update_expression)
-        logging.info(expression_values)
 
         response = ticket_talble.update_item(
             Key={'projectId': project_id, 'ticketId': ticket_id},
