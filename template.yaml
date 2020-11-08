@@ -7,7 +7,7 @@ Description: >
 Parameters:
   StageName:
     Type: String
-    Default: production
+    Default: Prod
     Description: (Required) The name of the new DynamoDB to store connection identifiers for each connected clients. Minimum 3 characters
     MinLength: 3
     MaxLength: 16
@@ -47,8 +47,10 @@ Resources:
         WriteCapacityUnits: 5
       SSESpecification:
         SSEEnabled: True
-
-  ConnetionTable:
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+  
+  ConnectionTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: 
@@ -69,19 +71,34 @@ Resources:
         WriteCapacityUnits: 5
       SSESpecification:
         SSEEnabled: True
-
+  
   TicketApi:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: tickets/
-      Handler: app.lambda_handler
+      Handler: rest.lambda_handler
       Runtime: python3.8
       Events:
         GetTickets:
           Type: Api
           Properties:
-            Path: /tickets
+            Path: /projects/{project_id}/tickets
             Method: get
+        CreateTicket:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}/tickets
+            Method: post
+        UpdateTicket:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}/tickets/{ticket_id}
+            Method: put
+        DeleteTicket:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}/tickets/{ticket_id}
+            Method: delete
       Environment:
         Variables:
           TABLE_NAME:  
@@ -120,7 +137,7 @@ Resources:
           TableName:  
             Fn::Sub:
               ProjectConnections_${StageName}
-  OnConnectInteg:
+  ConnectInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref TicketsWebSocket
@@ -129,17 +146,25 @@ Resources:
       IntegrationUri: 
         Fn::Sub:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnConnectFunction.Arn}/invocations
-  OnConnectRoute:
+  ConnectRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref TicketsWebSocket
       RouteKey: $connect
       AuthorizationType: NONE
-      OperationName: OnConnectRoute
+      OperationName: ConnectRoute
       Target: !Join
         - '/'
         - - 'integrations'
-          - !Ref OnConnectInteg
+          - !Ref ConnectInteg
+  OnConnectPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - TicketsWebSocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref OnConnectFunction
+      Principal: apigateway.amazonaws.com
 
   OnDisconnectFunction:
     Type: AWS::Serverless::Function
@@ -157,7 +182,7 @@ Resources:
           TableName:  
             Fn::Sub:
               ProjectConnections_${StageName}
-  OnDisconnectInteg:
+  DisconnectInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref TicketsWebSocket
@@ -166,23 +191,31 @@ Resources:
       IntegrationUri: 
         Fn::Sub:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnDisconnectFunction.Arn}/invocations
-  OnDisconnectRoute:
+  DisconnectRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref TicketsWebSocket
       RouteKey: $disconnect
       AuthorizationType: NONE
-      OperationName: OnDisconnectRoute
+      OperationName: DisconnectRoute
       Target: !Join
         - '/'
         - - 'integrations'
-          - !Ref OnDisconnectInteg
+          - !Ref DisconnectInteg
+  OnDisconnectPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - TicketsWebSocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref OnDisconnectFunction
+      Principal: apigateway.amazonaws.com
 
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
-    - OnConnectRoute
-    - OnDisconnectRoute
+    - ConnectRoute
+    - DisconnectRoute
     Properties:
       ApiId: !Ref TicketsWebSocket
   Stage:
@@ -193,6 +226,44 @@ Resources:
       DeploymentId: !Ref Deployment
       ApiId: !Ref TicketsWebSocket
 
+  TicketsProgateFunc:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 10
+      CodeUri: tickets/
+      Handler: ticket_progate.lambda_handler
+      Runtime: python3.8
+      Environment:
+        Variables:
+          CONNECTION_TABLE_NAME:
+            Fn::Sub:
+              ProjectConnections_${StageName}
+          TICKET_TABLE_NAME:
+            Fn::Sub:
+              ProjectTickets_${StageName}
+          WS_ENDPOINT: !Join [ '', ['https://', !Ref TicketsWebSocket, '.execute-api.',!Ref 'AWS::Region','.amazonaws.com/',!Ref Stage] ]
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:  
+            Fn::Sub:
+              ProjectConnections_${StageName}
+      - DynamoDBCrudPolicy:
+          TableName:  
+            Fn::Sub:
+              ProjectTickets_${StageName}
+      - Statement:
+        - Effect: Allow
+          Action:
+          - 'execute-api:ManageConnections'
+          Resource:
+          - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TicketsWebSocket}/*'
+      Events:
+        TicketsProgateFunc:
+          Type: DynamoDB
+          Properties:
+            Stream: 
+              Fn::GetAtt: [ TicktesTable, StreamArn ]
+            StartingPosition: LATEST
 
 Outputs:
 
