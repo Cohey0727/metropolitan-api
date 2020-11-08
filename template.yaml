@@ -1,8 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  metropolitan
-  Sample SAM Template for metropolitan
+  Metropolitan Project Mangement Tool
 
 Parameters:
   StageName:
@@ -48,7 +47,7 @@ Resources:
       SSESpecification:
         SSEEnabled: True
       StreamSpecification:
-        StreamViewType: NEW_IMAGE
+        StreamViewType: KEYS_ONLY
   
   ConnectionTable:
     Type: AWS::DynamoDB::Table
@@ -263,7 +262,7 @@ Resources:
           Properties:
             Stream: 
               Fn::GetAtt: [ TicktesTable, StreamArn ]
-            StartingPosition: LATEST
+            StartingPosition: TRIM_HORIZON
 
 Outputs:
 
