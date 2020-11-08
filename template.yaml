@@ -3,6 +3,10 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   Metropolitan Project Mangement Tool
 
+Globals:
+  Api:
+    Cors: "'*'"
+
 Parameters:
   StageName:
     Type: String
@@ -70,7 +74,7 @@ Resources:
         WriteCapacityUnits: 5
       SSESpecification:
         SSEEnabled: True
-  
+
   TicketApi:
     Type: AWS::Serverless::Function
     Properties:
@@ -105,7 +109,7 @@ Resources:
               ProjectTickets_${StageName}
       Policies:
       - DynamoDBCrudPolicy:
-          TableName:  
+          TableName:
             Fn::Sub:
               ProjectConnections_${StageName}
       - DynamoDBCrudPolicy:
@@ -133,7 +137,7 @@ Resources:
               ProjectConnections_${StageName}
       Policies:
       - DynamoDBCrudPolicy:
-          TableName:  
+          TableName:
             Fn::Sub:
               ProjectConnections_${StageName}
   ConnectInteg:
@@ -243,7 +247,7 @@ Resources:
           WS_ENDPOINT: !Join [ '', ['https://', !Ref TicketsWebSocket, '.execute-api.',!Ref 'AWS::Region','.amazonaws.com/',!Ref Stage] ]
       Policies:
       - DynamoDBCrudPolicy:
-          TableName:  
+          TableName:
             Fn::Sub:
               ProjectConnections_${StageName}
       - DynamoDBCrudPolicy:
