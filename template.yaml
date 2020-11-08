@@ -7,7 +7,7 @@ Description: >
 Parameters:
   StageName:
     Type: String
-    Default: production
+    Default: Prod
     Description: (Required) The name of the new DynamoDB to store connection identifiers for each connected clients. Minimum 3 characters
     MinLength: 3
     MaxLength: 16
@@ -76,14 +76,29 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: tickets/
-      Handler: app.lambda_handler
+      Handler: rest.lambda_handler
       Runtime: python3.8
       Events:
         GetTickets:
           Type: Api
           Properties:
-            Path: /tickets
+            Path: /projects/{project_id}/tickets
             Method: get
+        CreateTicket:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}/tickets
+            Method: post
+        UpdateTicket:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}/tickets/{ticket_id}
+            Method: put
+        DeleteTicket:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}/tickets/{ticket_id}
+            Method: delete
       Environment:
         Variables:
           TABLE_NAME:  
