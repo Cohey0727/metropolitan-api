@@ -63,18 +63,22 @@ class TicketApi(RestApi):
     def create(self, event, context):
         project_id = event['pathParameters'].get('project_id')
         ticket_data = deserialize_ticket(json.loads(event['body']))
-        response = ticket_talble.put_item(
+        ticket_id = str(uuid.uuid4())
+        ticket_talble.put_item(
             Item={
                 **ticket_data,
                 'projectId': project_id,
-                'ticketId': str(uuid.uuid4()),
+                'ticketId': ticket_id,
             },
-            ReturnValues='UPDATED_NEW'
         )
+
+        response = ticket_talble.query(
+            KeyConditionExpression=Key('projectId').eq(project_id) & Key('ticketId').eq(ticket_id)
+        )['Items'][0]
 
         return {
             'statusCode': 200,
-            'body': json.dumps(serialize_ticket(response['Attributes']))
+            'body': json.dumps(serialize_ticket(response))
         }
 
     def update(self, event, context):
