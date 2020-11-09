@@ -47,6 +47,11 @@ def serialize_ticket(data: dict) -> dict:
 
 class TicketApi(RestApi):
     detail_key = 'ticket_id'
+    default_headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+    }
 
     def list(self, event, context):
         project_id = event['pathParameters'].get('project_id')
@@ -73,7 +78,8 @@ class TicketApi(RestApi):
         )
 
         response = ticket_talble.query(
-            KeyConditionExpression=Key('projectId').eq(project_id) & Key('ticketId').eq(ticket_id)
+            KeyConditionExpression=Key('projectId').eq(
+                project_id) & Key('ticketId').eq(ticket_id)
         )['Items'][0]
 
         return {
