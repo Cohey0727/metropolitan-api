@@ -49,8 +49,9 @@ class TicketApi(RestApi):
     detail_key = 'ticket_id'
     default_headers = {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+        "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,X-Amz-Security-Token,Authorization,X-Api-Key,X-Requested-With,Accept,Access-Control-Allow-Methods,Access-Control-Allow-Origin,Access-Control-Allow-Headers",
+        "X-Requested-With": "*"
     }
 
     def list(self, event, context):
@@ -130,5 +131,7 @@ class TicketApi(RestApi):
             'body': json.dumps({'projectId': project_id, 'ticketId': ticket_id}),
         }
 
+    def default(self, event, context):
+        pass
 
 lambda_handler = TicketApi().create_handler()
