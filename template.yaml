@@ -32,7 +32,7 @@ Resources:
         AttributeType: S
       KeySchema:
       - AttributeName: projectId
-          KeyType: HASH
+        KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
@@ -52,7 +52,7 @@ Resources:
         AttributeType: S
       KeySchema:
       - AttributeName: primaryKey
-          KeyType: HASH
+        KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
@@ -168,6 +168,11 @@ Resources:
           Properties:
             Path: /projects/{project_id}/users
             Method: get
+        ListUserProjects:
+          Type: Api
+          Properties:
+            Path: /users/{user_id}/projects
+            Method: get
         SetProjectUsers:
           Type: Api
           Properties:
@@ -191,7 +196,7 @@ Resources:
       Handler: rest.lambda_handler
       Runtime: python3.8
       Events:
-        GetTickets:
+        ListTicket:
           Type: Api
           Properties:
             Path: /projects/{project_id}/tickets
@@ -206,7 +211,7 @@ Resources:
           Properties:
             Path: /projects/{project_id}/tickets/{ticket_id}
             Method: put
-        DeleteTicket:
+        DestroyTicket:
           Type: Api
           Properties:
             Path: /projects/{project_id}/tickets/{ticket_id}
@@ -374,7 +379,7 @@ Resources:
             StartingPosition: TRIM_HORIZON
 
 Outputs:
-  TICKET_WS:
+  TicketsWebSocketUrl:
     Value: !Join [ '', [ 'wss://', !Ref TicketsWebSocket, '.execute-api.',!Ref 'AWS::Region','.amazonaws.com/',!Ref Stage] ]
-  REST_API:
+  RestApiUrl:
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"

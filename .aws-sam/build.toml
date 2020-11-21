@@ -15,3 +15,13 @@ functions = ["OnDisconnectFunction"]
 codeuri = "ticket/"
 runtime = "python3.8"
 functions = ["TicketApi", "TicketsProgateFunc"]
+
+[build_definitions.348ba7c0-1667-445d-9de7-ac62094c45a6]
+codeuri = "project/"
+runtime = "python3.8"
+functions = ["ProjectApi"]
+
+[build_definitions.faed1847-62b7-46c9-8310-06c42e8ff898]
+codeuri = "project_user/"
+runtime = "python3.8"
+functions = ["ProjectUserApi"]
