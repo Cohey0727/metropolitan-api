@@ -21,7 +21,7 @@ Parameters:
     ConstraintDescription: 'Required. Can be characters and underscore only. No numbers or special characters allowed.'    
 
 Resources:
-  TicktesTable:
+  TicketsTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName:
@@ -81,7 +81,7 @@ Resources:
   TicketApi:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: tickets/
+      CodeUri: ticket/
       Handler: rest.lambda_handler
       Runtime: python3.8
       Events:
@@ -236,7 +236,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 10
-      CodeUri: tickets/
+      CodeUri: ticket/
       Handler: ticket_progate.lambda_handler
       Runtime: python3.8
       Environment:
@@ -268,7 +268,7 @@ Resources:
           Type: DynamoDB
           Properties:
             Stream: 
-              Fn::GetAtt: [ TicktesTable, StreamArn ]
+              Fn::GetAtt: [ TicketsTable, StreamArn ]
             StartingPosition: TRIM_HORIZON
 
 Outputs:
