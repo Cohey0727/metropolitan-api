@@ -40,10 +40,6 @@ def serialize_ticket(data: dict) -> dict:
 
 def lambda_handler(event, context):
     records = event['Records']
-    connection_talble.put_item(Item={
-        'projectId': ws_endpoint,
-        'connectionId': f'eventID: {records[0]["eventID"]}, eventName: {records[0]["eventName"]}',
-    })
     project_ids = set(record['dynamodb']['Keys']
                       ['projectId']['S'] for record in records)
 
@@ -73,11 +69,6 @@ def progate_project_tickets(project_id: int, batch):
             )
         except Exception as e:
             logger.error(e)
-            logger.info(e)
-            print(e, flush=True)
-            batch.put_item(
-                Item={'projectId': project_id, 'connectionId': str(e)}
-            )
             batch.delete_item(
                 Key={'projectId': project_id, 'connectionId': connection_id}
             )

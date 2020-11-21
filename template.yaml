@@ -3,6 +3,13 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   Metropolitan Project Mangement Tool
 
+Globals:
+  Api:
+    Cors:
+      AllowMethods: "'GET, POST, PUT, DELETE, PATCH, OPTIONS'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,X-Amz-Security-Token,Authorization,X-Api-Key,X-Requested-With,Accept,Access-Control-Allow-Methods,Access-Control-Allow-Origin,Access-Control-Allow-Headers'"
+      AllowOrigin: "'*'"
+
 Parameters:
   StageName:
     Type: String
@@ -14,7 +21,47 @@ Parameters:
     ConstraintDescription: 'Required. Can be characters and underscore only. No numbers or special characters allowed.'    
 
 Resources:
-  TicktesTable:
+  ProjectsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub:
+          Projects_${StageName}
+      AttributeDefinitions:
+      - AttributeName: projectId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: projectId
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      SSESpecification:
+        SSEEnabled: True
+      StreamSpecification:
+        StreamViewType: KEYS_ONLY
+
+  ProjectsUsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub:
+          ProjectsUsers_${StageName}
+      AttributeDefinitions:
+      - AttributeName: primaryKey
+        AttributeType: S
+      KeySchema:
+      - AttributeName: primaryKey
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      SSESpecification:
+        SSEEnabled: True
+      StreamSpecification:
+        StreamViewType: KEYS_ONLY
+
+  TicketsTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName:
@@ -70,15 +117,86 @@ Resources:
         WriteCapacityUnits: 5
       SSESpecification:
         SSEEnabled: True
-  
-  TicketApi:
+
+  ProjectApi:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: tickets/
+      CodeUri: project/
       Handler: rest.lambda_handler
       Runtime: python3.8
       Events:
-        GetTickets:
+        RetrieveProject:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}
+            Method: get
+        CreateProject:
+          Type: Api
+          Properties:
+            Path: /projects
+            Method: post
+        UpdateProject:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}
+            Method: put
+        DestroyProject:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}
+            Method: delete
+      Environment:
+        Variables:
+          TABLE_NAME:  
+            Fn::Sub:
+              Projects_${StageName}
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:  
+            Fn::Sub:
+              Projects_${StageName}
+
+  ProjectUserApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: project_user/
+      Handler: rest.lambda_handler
+      Runtime: python3.8
+      Events:
+        ListProjectUsers:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}/users
+            Method: get
+        ListUserProjects:
+          Type: Api
+          Properties:
+            Path: /users/{user_id}/projects
+            Method: get
+        SetProjectUsers:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}/users
+            Method: post
+      Environment:
+        Variables:
+          TABLE_NAME:  
+            Fn::Sub:
+              Projects_${StageName}
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:  
+            Fn::Sub:
+              Projects_${StageName}
+
+  TicketApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ticket/
+      Handler: rest.lambda_handler
+      Runtime: python3.8
+      Events:
+        ListTicket:
           Type: Api
           Properties:
             Path: /projects/{project_id}/tickets
@@ -93,7 +211,7 @@ Resources:
           Properties:
             Path: /projects/{project_id}/tickets/{ticket_id}
             Method: put
-        DeleteTicket:
+        DestroyTicket:
           Type: Api
           Properties:
             Path: /projects/{project_id}/tickets/{ticket_id}
@@ -104,10 +222,6 @@ Resources:
             Fn::Sub:
               ProjectTickets_${StageName}
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName:  
-            Fn::Sub:
-              ProjectConnections_${StageName}
       - DynamoDBCrudPolicy:
           TableName:  
             Fn::Sub:
@@ -133,7 +247,7 @@ Resources:
               ProjectConnections_${StageName}
       Policies:
       - DynamoDBCrudPolicy:
-          TableName:  
+          TableName:
             Fn::Sub:
               ProjectConnections_${StageName}
   ConnectInteg:
@@ -229,7 +343,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 10
-      CodeUri: tickets/
+      CodeUri: ticket/
       Handler: ticket_progate.lambda_handler
       Runtime: python3.8
       Environment:
@@ -243,7 +357,7 @@ Resources:
           WS_ENDPOINT: !Join [ '', ['https://', !Ref TicketsWebSocket, '.execute-api.',!Ref 'AWS::Region','.amazonaws.com/',!Ref Stage] ]
       Policies:
       - DynamoDBCrudPolicy:
-          TableName:  
+          TableName:
             Fn::Sub:
               ProjectConnections_${StageName}
       - DynamoDBCrudPolicy:
@@ -261,15 +375,11 @@ Resources:
           Type: DynamoDB
           Properties:
             Stream: 
-              Fn::GetAtt: [ TicktesTable, StreamArn ]
+              Fn::GetAtt: [ TicketsTable, StreamArn ]
             StartingPosition: TRIM_HORIZON
 
 Outputs:
-
-  TicketsWebSocketURI:
-    Description: "The WSS Protocol URI to connect to"
+  TicketsWebSocketUrl:
     Value: !Join [ '', [ 'wss://', !Ref TicketsWebSocket, '.execute-api.',!Ref 'AWS::Region','.amazonaws.com/',!Ref Stage] ]
-
-  TicketApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/projects/{project_id}/tickets"
+  RestApiUrl:
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
