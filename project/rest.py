@@ -3,9 +3,7 @@ import decimal
 import json
 import logging
 import os
-import re
 import uuid
-from boto3.dynamodb.conditions import Key
 from aws_lambda_rest_api import RestApi
 
 
