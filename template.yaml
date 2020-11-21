@@ -21,6 +21,46 @@ Parameters:
     ConstraintDescription: 'Required. Can be characters and underscore only. No numbers or special characters allowed.'    
 
 Resources:
+  ProjectsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub:
+          Projects_${StageName}
+      AttributeDefinitions:
+      - AttributeName: projectId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: projectId
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      SSESpecification:
+        SSEEnabled: True
+      StreamSpecification:
+        StreamViewType: KEYS_ONLY
+
+  ProjectsUsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub:
+          ProjectsUsers_${StageName}
+      AttributeDefinitions:
+      - AttributeName: primaryKey
+        AttributeType: S
+      KeySchema:
+      - AttributeName: primaryKey
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      SSESpecification:
+        SSEEnabled: True
+      StreamSpecification:
+        StreamViewType: KEYS_ONLY
+
   TicketsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -78,6 +118,72 @@ Resources:
       SSESpecification:
         SSEEnabled: True
 
+  ProjectApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: project/
+      Handler: rest.lambda_handler
+      Runtime: python3.8
+      Events:
+        RetrieveProject:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}
+            Method: get
+        CreateProject:
+          Type: Api
+          Properties:
+            Path: /projects
+            Method: post
+        UpdateProject:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}
+            Method: put
+        DestroyProject:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}
+            Method: delete
+      Environment:
+        Variables:
+          TABLE_NAME:  
+            Fn::Sub:
+              Projects_${StageName}
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:  
+            Fn::Sub:
+              Projects_${StageName}
+
+  ProjectUserApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: project_user/
+      Handler: rest.lambda_handler
+      Runtime: python3.8
+      Events:
+        ListProjectUsers:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}/users
+            Method: get
+        SetProjectUsers:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}/users
+            Method: post
+      Environment:
+        Variables:
+          TABLE_NAME:  
+            Fn::Sub:
+              Projects_${StageName}
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:  
+            Fn::Sub:
+              Projects_${StageName}
+
   TicketApi:
     Type: AWS::Serverless::Function
     Properties:
@@ -111,10 +217,6 @@ Resources:
             Fn::Sub:
               ProjectTickets_${StageName}
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName:
-            Fn::Sub:
-              ProjectConnections_${StageName}
       - DynamoDBCrudPolicy:
           TableName:  
             Fn::Sub:
@@ -272,11 +374,7 @@ Resources:
             StartingPosition: TRIM_HORIZON
 
 Outputs:
-
-  TicketsWebSocketURI:
-    Description: "The WSS Protocol URI to connect to"
+  TICKET_WS:
     Value: !Join [ '', [ 'wss://', !Ref TicketsWebSocket, '.execute-api.',!Ref 'AWS::Region','.amazonaws.com/',!Ref Stage] ]
-
-  TicketApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/projects/{project_id}/tickets"
+  REST_API:
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
