@@ -21,7 +21,7 @@ codeuri = "project/"
 runtime = "python3.8"
 functions = ["ProjectApi"]
 
-[build_definitions.faed1847-62b7-46c9-8310-06c42e8ff898]
-codeuri = "project_user/"
+[build_definitions.b3bd4fa1-cd56-4b8b-a7f0-799eacfd6864]
+codeuri = "user_project/"
 runtime = "python3.8"
-functions = ["ProjectUserApi"]
+functions = ["UserProjectApi"]

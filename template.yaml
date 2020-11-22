@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
   Metropolitan Project Mangement Tool
@@ -18,21 +18,20 @@ Parameters:
     MinLength: 3
     MaxLength: 16
     AllowedPattern: ^[A-Za-z_]+$
-    ConstraintDescription: 'Required. Can be characters and underscore only. No numbers or special characters allowed.'    
+    ConstraintDescription: "Required. Can be characters and underscore only. No numbers or special characters allowed."
 
 Resources:
   ProjectsTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName:
-        Fn::Sub:
-          Projects_${StageName}
+        Fn::Sub: Projects_${StageName}
       AttributeDefinitions:
-      - AttributeName: projectId
-        AttributeType: S
+        - AttributeName: projectId
+          AttributeType: S
       KeySchema:
-      - AttributeName: projectId
-        KeyType: HASH
+        - AttributeName: projectId
+          KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
@@ -45,14 +44,13 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName:
-        Fn::Sub:
-          ProjectsUsers_${StageName}
+        Fn::Sub: ProjectsUsers_${StageName}
       AttributeDefinitions:
-      - AttributeName: primaryKey
-        AttributeType: S
+        - AttributeName: primaryKey
+          AttributeType: S
       KeySchema:
-      - AttributeName: primaryKey
-        KeyType: HASH
+        - AttributeName: primaryKey
+          KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
@@ -65,29 +63,28 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName:
-        Fn::Sub:
-          ProjectTickets_${StageName}
+        Fn::Sub: ProjectTickets_${StageName}
       AttributeDefinitions:
-      - AttributeName: projectId
-        AttributeType: S
-      - AttributeName: ticketId
-        AttributeType: S
-      - AttributeName: currentPosition
-        AttributeType: S
+        - AttributeName: projectId
+          AttributeType: S
+        - AttributeName: ticketId
+          AttributeType: S
+        - AttributeName: currentPosition
+          AttributeType: S
       KeySchema:
-      - AttributeName: projectId
-        KeyType: HASH
-      - AttributeName: ticketId
-        KeyType: RANGE
+        - AttributeName: projectId
+          KeyType: HASH
+        - AttributeName: ticketId
+          KeyType: RANGE
       LocalSecondaryIndexes:
-      - IndexName: currentPositionIndex
-        KeySchema:
-          - AttributeName: projectId
-            KeyType: HASH
-          - AttributeName: currentPosition
-            KeyType: RANGE
-        Projection:
-          ProjectionType: KEYS_ONLY
+        - IndexName: currentPositionIndex
+          KeySchema:
+            - AttributeName: projectId
+              KeyType: HASH
+            - AttributeName: currentPosition
+              KeyType: RANGE
+          Projection:
+            ProjectionType: KEYS_ONLY
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
@@ -95,23 +92,22 @@ Resources:
         SSEEnabled: True
       StreamSpecification:
         StreamViewType: KEYS_ONLY
-  
+
   ConnectionTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: 
-        Fn::Sub:
-          ProjectConnections_${StageName}
+      TableName:
+        Fn::Sub: ProjectConnections_${StageName}
       AttributeDefinitions:
-      - AttributeName: projectId
-        AttributeType: S
-      - AttributeName: connectionId
-        AttributeType: S
+        - AttributeName: projectId
+          AttributeType: S
+        - AttributeName: connectionId
+          AttributeType: S
       KeySchema:
-      - AttributeName: projectId
-        KeyType: HASH
-      - AttributeName: connectionId
-        KeyType: RANGE
+        - AttributeName: projectId
+          KeyType: HASH
+        - AttributeName: connectionId
+          KeyType: RANGE
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
@@ -125,6 +121,11 @@ Resources:
       Handler: rest.lambda_handler
       Runtime: python3.8
       Events:
+        ListProject:
+          Type: Api
+          Properties:
+            Path: /projects
+            Method: get
         RetrieveProject:
           Type: Api
           Properties:
@@ -147,47 +148,53 @@ Resources:
             Method: delete
       Environment:
         Variables:
-          TABLE_NAME:  
-            Fn::Sub:
-              Projects_${StageName}
+          PROJECT_TABLE_NAME:
+            Fn::Sub: Projects_${StageName}
+          PROJECT_USER_TABLE_NAME:
+            Fn::Sub: ProjectsUsers_${StageName}
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName:  
-            Fn::Sub:
-              Projects_${StageName}
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::Sub: Projects_${StageName}
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::Sub: ProjectsUsers_${StageName}
 
-  ProjectUserApi:
+  UserProjectApi:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: project_user/
+      CodeUri: user_project/
       Handler: rest.lambda_handler
       Runtime: python3.8
       Events:
-        ListProjectUsers:
-          Type: Api
-          Properties:
-            Path: /projects/{project_id}/users
-            Method: get
         ListUserProjects:
           Type: Api
           Properties:
             Path: /users/{user_id}/projects
             Method: get
-        SetProjectUsers:
+        JoinUserProject:
           Type: Api
           Properties:
-            Path: /projects/{project_id}/users
-            Method: post
+            Path: /users/{user_id}/projects/{project_id}
+            Method: put
+        RemoveUserProject:
+          Type: Api
+          Properties:
+            Path: /users/{user_id}/projects/{project_id}
+            Method: delete
       Environment:
         Variables:
-          TABLE_NAME:  
-            Fn::Sub:
-              Projects_${StageName}
+          PROJECT_TABLE_NAME:
+            Fn::Sub: Projects_${StageName}
+          PROJECT_USER_TABLE_NAME:
+            Fn::Sub: ProjectsUsers_${StageName}
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName:  
-            Fn::Sub:
-              Projects_${StageName}
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::Sub: Projects_${StageName}
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::Sub: ProjectsUsers_${StageName}
 
   TicketApi:
     Type: AWS::Serverless::Function
@@ -218,14 +225,12 @@ Resources:
             Method: delete
       Environment:
         Variables:
-          TABLE_NAME:  
-            Fn::Sub:
-              ProjectTickets_${StageName}
+          TABLE_NAME:
+            Fn::Sub: ProjectTickets_${StageName}
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName:  
-            Fn::Sub:
-              ProjectTickets_${StageName}
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::Sub: ProjectTickets_${StageName}
 
   TicketsWebSocket:
     Type: AWS::ApiGatewayV2::Api
@@ -242,23 +247,20 @@ Resources:
       Runtime: python3.8
       Environment:
         Variables:
-          TABLE_NAME:  
-            Fn::Sub:
-              ProjectConnections_${StageName}
+          TABLE_NAME:
+            Fn::Sub: ProjectConnections_${StageName}
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName:
-            Fn::Sub:
-              ProjectConnections_${StageName}
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::Sub: ProjectConnections_${StageName}
   ConnectInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref TicketsWebSocket
       Description: Connect Integration
       IntegrationType: AWS_PROXY
-      IntegrationUri: 
-        Fn::Sub:
-            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnConnectFunction.Arn}/invocations
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnConnectFunction.Arn}/invocations
   ConnectRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -267,8 +269,8 @@ Resources:
       AuthorizationType: NONE
       OperationName: ConnectRoute
       Target: !Join
-        - '/'
-        - - 'integrations'
+        - "/"
+        - - "integrations"
           - !Ref ConnectInteg
   OnConnectPermission:
     Type: AWS::Lambda::Permission
@@ -288,22 +290,19 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME:
-            Fn::Sub:
-              ProjectConnections_${StageName}
+            Fn::Sub: ProjectConnections_${StageName}
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName:  
-            Fn::Sub:
-              ProjectConnections_${StageName}
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::Sub: ProjectConnections_${StageName}
   DisconnectInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref TicketsWebSocket
       Description: Disconnect Integration
       IntegrationType: AWS_PROXY
-      IntegrationUri: 
-        Fn::Sub:
-            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnDisconnectFunction.Arn}/invocations
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnDisconnectFunction.Arn}/invocations
   DisconnectRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -312,8 +311,8 @@ Resources:
       AuthorizationType: NONE
       OperationName: DisconnectRoute
       Target: !Join
-        - '/'
-        - - 'integrations'
+        - "/"
+        - - "integrations"
           - !Ref DisconnectInteg
   OnDisconnectPermission:
     Type: AWS::Lambda::Permission
@@ -327,8 +326,8 @@ Resources:
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
-    - ConnectRoute
-    - DisconnectRoute
+      - ConnectRoute
+      - DisconnectRoute
     Properties:
       ApiId: !Ref TicketsWebSocket
   Stage:
@@ -349,37 +348,55 @@ Resources:
       Environment:
         Variables:
           CONNECTION_TABLE_NAME:
-            Fn::Sub:
-              ProjectConnections_${StageName}
+            Fn::Sub: ProjectConnections_${StageName}
           TICKET_TABLE_NAME:
-            Fn::Sub:
-              ProjectTickets_${StageName}
-          WS_ENDPOINT: !Join [ '', ['https://', !Ref TicketsWebSocket, '.execute-api.',!Ref 'AWS::Region','.amazonaws.com/',!Ref Stage] ]
+            Fn::Sub: ProjectTickets_${StageName}
+          WS_ENDPOINT:
+            !Join [
+              "",
+              [
+                "https://",
+                !Ref TicketsWebSocket,
+                ".execute-api.",
+                !Ref "AWS::Region",
+                ".amazonaws.com/",
+                !Ref Stage,
+              ],
+            ]
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName:
-            Fn::Sub:
-              ProjectConnections_${StageName}
-      - DynamoDBCrudPolicy:
-          TableName:  
-            Fn::Sub:
-              ProjectTickets_${StageName}
-      - Statement:
-        - Effect: Allow
-          Action:
-          - 'execute-api:ManageConnections'
-          Resource:
-          - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TicketsWebSocket}/*'
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::Sub: ProjectConnections_${StageName}
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::Sub: ProjectTickets_${StageName}
+        - Statement:
+            - Effect: Allow
+              Action:
+                - "execute-api:ManageConnections"
+              Resource:
+                - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TicketsWebSocket}/*"
       Events:
         TicketsProgateFunc:
           Type: DynamoDB
           Properties:
-            Stream: 
-              Fn::GetAtt: [ TicketsTable, StreamArn ]
+            Stream:
+              Fn::GetAtt: [TicketsTable, StreamArn]
             StartingPosition: TRIM_HORIZON
 
 Outputs:
   TicketsWebSocketUrl:
-    Value: !Join [ '', [ 'wss://', !Ref TicketsWebSocket, '.execute-api.',!Ref 'AWS::Region','.amazonaws.com/',!Ref Stage] ]
+    Value:
+      !Join [
+        "",
+        [
+          "wss://",
+          !Ref TicketsWebSocket,
+          ".execute-api.",
+          !Ref "AWS::Region",
+          ".amazonaws.com/",
+          !Ref Stage,
+        ],
+      ]
   RestApiUrl:
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
