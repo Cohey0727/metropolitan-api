@@ -5,13 +5,17 @@ import logging
 import os
 import uuid
 from aws_lambda_rest_api import RestApi
+from boto3.dynamodb.conditions import Attr, Key
 
 
 logger = logging.getLogger()
 logger.setLevel('INFO')
 
-table_name = os.environ.get('TABLE_NAME')
-project_table = boto3.resource('dynamodb').Table(table_name)
+project_table_name = os.environ.get('PROJECT_TABLE_NAME')
+project_table = boto3.resource('dynamodb').Table(project_table_name)
+
+project_user_table_name = os.environ.get('PROJECT_USER_TABLE_NAME')
+project_user_table = boto3.resource('dynamodb').Table(project_user_table_name)
 
 
 class ProjectApi(RestApi):
@@ -22,6 +26,18 @@ class ProjectApi(RestApi):
         "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,X-Amz-Security-Token,Authorization,X-Api-Key,X-Requested-With,Accept,Access-Control-Allow-Methods,Access-Control-Allow-Origin,Access-Control-Allow-Headers",
         "X-Requested-With": "*"
     }
+
+    def list(self, event, context):
+        user_id = event['queryStringParameters'].get('user_id')
+        params = {'primaryKey': f'User#{user_id}'}
+        user_projects_data = project_user_table.get_item(Key=params)
+        project_ids = user_projects_data.get('Item', [])
+        projects = project_table.scan(FilterExpression=Attr('projectId').is_in(project_ids))
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps(projects['Items']),
+        }
 
     def retrieve(self, event, context):
         project_id = event['pathParameters'].get('project_id')

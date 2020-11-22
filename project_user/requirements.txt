@@ -1,3 +1,0 @@
-aws-lambda-rest-api==1.0.7
-boto3
-requests
