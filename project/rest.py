@@ -31,13 +31,20 @@ class ProjectApi(RestApi):
         user_id = event['queryStringParameters'].get('user_id')
         params = {'primaryKey': f'User#{user_id}'}
         user_projects_data = project_user_table.get_item(Key=params)
-        project_ids = user_projects_data.get('Item', [])
-        projects = project_table.scan(FilterExpression=Attr('projectId').is_in(project_ids))
+        project_ids = user_projects_data.get('Item', {}).get('values')
 
-        return {
-            'statusCode': 200,
-            'body': json.dumps(projects['Items']),
-        }
+        logger.info(user_id)
+        logger.info(params)
+        logger.info(user_projects_data)
+        logger.info(project_ids)
+        
+        projects = []
+        if project_ids:
+            res = project_table.scan(
+                FilterExpression=Attr('projectId').is_in(project_ids))
+            projects = res['Items']
+
+        return {'statusCode': 200, 'body': json.dumps(projects)}
 
     def retrieve(self, event, context):
         project_id = event['pathParameters'].get('project_id')
