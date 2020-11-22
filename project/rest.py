@@ -50,21 +50,16 @@ class ProjectApi(RestApi):
 
     def create(self, event, context):
         project_id = str(uuid.uuid4())
-        project_data = {**json.loads(event['body']), 'projectId': project_id}
-        new_project = project_table.put_item(
-            Item=project_data,
-            ReturnValues='UPDATED_NEW'
-        )
+        new_project = {**json.loads(event['body']), 'projectId': project_id}
+        project_table.put_item(Item=new_project)
 
-        user_project_key = {'primaryKey': f'User#{new_project.author}'}
+        user_project_key = {'primaryKey': f'User#{new_project["author"]}'}
         user_projects = project_user_table \
             .get_item(Key=user_project_key) \
             .get('Item', None)
 
         if user_projects:
-            new_project_ids = [
-                *user_projects['values'], new_project['projectId']
-            ]
+            new_project_ids = [*user_projects['values'], project_id]
             new_user_projects_data = {'values': new_project_ids}
             update_expression = 'SET '
             expression_values = {}
@@ -83,11 +78,8 @@ class ProjectApi(RestApi):
                 ExpressionAttributeValues=expression_values,
             )
         else:
-            new_project_ids = [new_project['projectId']]
-            new_user_projects_data = {
-                **user_project_key, 'values': new_project_ids}
-
-            project_table.put_item(Item=project_data)
+            new_user_projects_data = {**user_project_key, 'values': [project_id]}
+            project_table.put_item(Item=new_user_projects_data)
 
         return {'statusCode': 200, 'body': json.dumps(new_project)}
 
