@@ -79,7 +79,7 @@ class ProjectApi(RestApi):
             )
         else:
             new_user_projects_data = {**user_project_key, 'values': [project_id]}
-            project_table.put_item(Item=new_user_projects_data)
+            project_user_table.put_item(Item=new_user_projects_data)
 
         return {'statusCode': 200, 'body': json.dumps(new_project)}
 
