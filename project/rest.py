@@ -1,12 +1,10 @@
 import boto3
-import decimal
 import json
 import logging
 import os
-import uuid
+from shortuuid import uuid
 from aws_lambda_rest_api import RestApi
-from boto3.dynamodb.conditions import Attr, Key
-
+from boto3.dynamodb.conditions import Attr
 
 logger = logging.getLogger()
 logger.setLevel('INFO')
@@ -16,6 +14,24 @@ project_table = boto3.resource('dynamodb').Table(project_table_name)
 
 project_user_table_name = os.environ.get('PROJECT_USER_TABLE_NAME')
 project_user_table = boto3.resource('dynamodb').Table(project_user_table_name)
+
+
+def get_default_project():
+    return {
+        'boards': [
+            {
+                'boardId': uuid(),
+                'title': 'Development',
+                'description': 'Development Board',
+                'lists': [
+                    {'listId': uuid(), 'title': 'Draft'},
+                    {'listId': uuid(), 'title': 'On Progress'},
+                    {'listId': uuid(), 'title': 'Review'},
+                    {'listId': uuid(), 'title': 'Finish'}
+                ]
+            }
+        ]
+    }
 
 
 class ProjectApi(RestApi):
@@ -49,8 +65,8 @@ class ProjectApi(RestApi):
         return {'statusCode': 200, 'body': json.dumps(project)}
 
     def create(self, event, context):
-        project_id = str(uuid.uuid4())
-        new_project = {**json.loads(event['body']), 'projectId': project_id}
+        project_id = uuid()
+        new_project = {**get_default_project(), **json.loads(event['body']), 'projectId': project_id}
         project_table.put_item(Item=new_project)
 
         user_project_key = {'primaryKey': f'User#{new_project["author"]}'}
@@ -78,7 +94,8 @@ class ProjectApi(RestApi):
                 ExpressionAttributeValues=expression_values,
             )
         else:
-            new_user_projects_data = {**user_project_key, 'values': [project_id]}
+            new_user_projects_data = {
+                **user_project_key, 'values': [project_id]}
             project_user_table.put_item(Item=new_user_projects_data)
 
         return {'statusCode': 200, 'body': json.dumps(new_project)}

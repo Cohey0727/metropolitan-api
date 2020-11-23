@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import re
-import uuid
+from shortuuid import uuid
 from boto3.dynamodb.conditions import Key
 from aws_lambda_rest_api import RestApi
 
@@ -69,7 +69,7 @@ class TicketApi(RestApi):
     def create(self, event, context):
         project_id = event['pathParameters'].get('project_id')
         ticket_data = deserialize_ticket(json.loads(event['body']))
-        ticket_id = str(uuid.uuid4())
+        ticket_id = uuid()
         ticket_talble.put_item(
             Item={
                 **ticket_data,
