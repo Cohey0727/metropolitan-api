@@ -33,11 +33,6 @@ class ProjectApi(RestApi):
         user_projects_data = project_user_table.get_item(Key=params)
         project_ids = user_projects_data.get('Item', {}).get('values')
 
-        logger.info(user_id)
-        logger.info(params)
-        logger.info(user_projects_data)
-        logger.info(project_ids)
-        
         projects = []
         if project_ids:
             res = project_table.scan(
@@ -55,13 +50,38 @@ class ProjectApi(RestApi):
 
     def create(self, event, context):
         project_id = str(uuid.uuid4())
-        project_data = {**json.loads(event['body']), 'projectId': project_id}
-        project_table.put_item(Item=project_data)
+        new_project = {**json.loads(event['body']), 'projectId': project_id}
+        project_table.put_item(Item=new_project)
 
-        params = {'projectId': project_id}
-        project = project_table.get_item(Key=params)['Item']
+        user_project_key = {'primaryKey': f'User#{new_project["author"]}'}
+        user_projects = project_user_table \
+            .get_item(Key=user_project_key) \
+            .get('Item', None)
 
-        return {'statusCode': 200, 'body': json.dumps(project)}
+        if user_projects:
+            new_project_ids = [*user_projects['values'], project_id]
+            new_user_projects_data = {'values': new_project_ids}
+            update_expression = 'SET '
+            expression_values = {}
+            expression_names = {}
+            for key, value in new_user_projects_data.items():
+                update_expression += f' #{key} = :{key},'
+                expression_values[f':{key}'] = value
+                expression_names[f'#{key}'] = key
+
+            update_expression = update_expression[:-1]
+
+            project_user_table.update_item(
+                Key=user_project_key,
+                ExpressionAttributeNames=expression_names,
+                UpdateExpression=update_expression,
+                ExpressionAttributeValues=expression_values,
+            )
+        else:
+            new_user_projects_data = {**user_project_key, 'values': [project_id]}
+            project_table.put_item(Item=new_user_projects_data)
+
+        return {'statusCode': 200, 'body': json.dumps(new_project)}
 
     def update(self, event, context):
         project_id = event['pathParameters'].get('project_id')
