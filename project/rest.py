@@ -2,10 +2,9 @@ import boto3
 import json
 import logging
 import os
-import uuid
+from shortuuid import uuid
 from aws_lambda_rest_api import RestApi
 from boto3.dynamodb.conditions import Attr, Key
-
 
 logger = logging.getLogger()
 logger.setLevel('INFO')
@@ -69,8 +68,8 @@ class ProjectApi(RestApi):
         return {'statusCode': 200, 'body': json.dumps(project)}
 
     def create(self, event, context):
-        project_id = str(uuid.uuid4())
-        new_project = {**json.loads(event['body']), 'projectId': project_id}
+        project_id = uuid()
+        new_project = {**get_default_project(), **json.loads(event['body']), 'projectId': project_id}
         project_table.put_item(Item=new_project)
 
         user_id = new_project["author"]
