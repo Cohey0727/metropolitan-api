@@ -1,5 +1,4 @@
 import boto3
-import json
 import logging
 import os
 from boto3.dynamodb.conditions import Key
@@ -14,9 +13,8 @@ def lambda_handler(event, context):
     connection_id = event['requestContext'].get('connectionId')
     res = connection_talble.scan(FilterExpression=Key('connectionId').eq(connection_id))
 
-    with connection_talble.batch_writer(overwrite_by_pkeys=['projectId', 'connectionId']) as batch:
-        for connection_record in res['Items']:
-            project_id = connection_record['projectId']
-            batch.delete_item(Key={'projectId': project_id, 'connectionId': connection_id})
+    for connection_record in res['Items']:
+        project_id = connection_record['projectId']
+        connection_talble.delete_item(Key={'projectId': project_id, 'connectionId': connection_id})
 
     return {'statusCode': 200, 'body': 'Disconnected.'}

@@ -46,11 +46,26 @@ Resources:
       TableName:
         Fn::Sub: ProjectsUsers_${StageName}
       AttributeDefinitions:
-        - AttributeName: primaryKey
+        - AttributeName: type
           AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: projectId
+          AttributeType: S          
       KeySchema:
-        - AttributeName: primaryKey
+        - AttributeName: type
           KeyType: HASH
+        - AttributeName: userId
+          KeyType: RANGE
+      LocalSecondaryIndexes:
+        - IndexName: projectIdIndex
+          KeySchema:
+            - AttributeName: type
+              KeyType: HASH
+            - AttributeName: projectId
+              KeyType: RANGE
+          Projection:
+            ProjectionType: KEYS_ONLY
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5

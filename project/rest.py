@@ -1,5 +1,4 @@
 import boto3
-import decimal
 import json
 import logging
 import os
@@ -18,6 +17,24 @@ project_user_table_name = os.environ.get('PROJECT_USER_TABLE_NAME')
 project_user_table = boto3.resource('dynamodb').Table(project_user_table_name)
 
 
+def get_default_project():
+    return {
+        'boards': [
+            {
+                'boardId': uuid(),
+                'title': 'Development',
+                'description': 'Development Board',
+                'lists': [
+                    {'listId': uuid(), 'title': 'Draft'},
+                    {'listId': uuid(), 'title': 'On Progress'},
+                    {'listId': uuid(), 'title': 'Review'},
+                    {'listId': uuid(), 'title': 'Finish'}
+                ]
+            }
+        ]
+    }
+
+
 class ProjectApi(RestApi):
     detail_key = 'project_id'
     default_headers = {
@@ -29,14 +46,17 @@ class ProjectApi(RestApi):
 
     def list(self, event, context):
         user_id = event['queryStringParameters'].get('user_id')
-        params = {'primaryKey': f'User#{user_id}'}
-        user_projects_data = project_user_table.get_item(Key=params)
-        project_ids = user_projects_data.get('Item', {}).get('values')
+        user_projects_data = project_user_table.query(
+            KeyConditionExpression=Key('type').eq('Member') & Key('userId').eq(user_id)
+        )
+        user_projects = user_projects_data.get('Items', [])
+        project_ids = [user_project['projectId']
+                       for user_project in user_projects]
 
         projects = []
         if project_ids:
-            res = project_table.scan(
-                FilterExpression=Attr('projectId').is_in(project_ids))
+            res = project_table.scan(FilterExpression=Attr(
+                'projectId').is_in(project_ids))
             projects = res['Items']
 
         return {'statusCode': 200, 'body': json.dumps(projects)}
@@ -53,33 +73,12 @@ class ProjectApi(RestApi):
         new_project = {**json.loads(event['body']), 'projectId': project_id}
         project_table.put_item(Item=new_project)
 
-        user_project_key = {'primaryKey': f'User#{new_project["author"]}'}
-        user_projects = project_user_table \
-            .get_item(Key=user_project_key) \
-            .get('Item', None)
-
-        if user_projects:
-            new_project_ids = [*user_projects['values'], project_id]
-            new_user_projects_data = {'values': new_project_ids}
-            update_expression = 'SET '
-            expression_values = {}
-            expression_names = {}
-            for key, value in new_user_projects_data.items():
-                update_expression += f' #{key} = :{key},'
-                expression_values[f':{key}'] = value
-                expression_names[f'#{key}'] = key
-
-            update_expression = update_expression[:-1]
-
-            project_user_table.update_item(
-                Key=user_project_key,
-                ExpressionAttributeNames=expression_names,
-                UpdateExpression=update_expression,
-                ExpressionAttributeValues=expression_values,
-            )
-        else:
-            new_user_projects_data = {**user_project_key, 'values': [project_id]}
-            project_table.put_item(Item=new_user_projects_data)
+        user_id = new_project["author"]
+        base_record = {'userId': user_id, 'projectId': project_id}
+        record_as_member = {'type': 'Member', **base_record}
+        record_as_admin = {'type': 'Admin', **base_record}
+        project_user_table.put_item(Item=record_as_member)
+        project_user_table.put_item(Item=record_as_admin)
 
         return {'statusCode': 200, 'body': json.dumps(new_project)}
 
