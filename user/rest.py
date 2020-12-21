@@ -1,4 +1,6 @@
+from typing import List
 import boto3
+import http.client
 import decimal
 import json
 import logging
@@ -12,11 +14,17 @@ from aws_lambda_rest_api import RestApi
 logger = logging.getLogger()
 logger.setLevel('INFO')
 
-project_table_name = os.environ.get('PROJECT_TABLE_NAME')
-project_table = boto3.resource('dynamodb').Table(project_table_name)
 
-project_user_table_name = os.environ.get('PROJECT_USER_TABLE_NAME')
-project_user_table = boto3.resource('dynamodb').Table(project_user_table_name)
+AUTH0_DOMAIN = os.environ.get('AUTH0_DOMAIN')
+user_url = f'/{AUTH0_DOMAIN}/api/v2/users'
+AUTH0_API_CLIENT_ID = os.environ.get('AUTH0_API_CLIENT_ID')
+AUTH0_API_CLIENT_SECRET = os.environ.get('AUTH0_API_CLIENT_SECRET')
+
+payload = {
+    'client_id': AUTH0_API_CLIENT_ID,
+    'client_secret': AUTH0_API_CLIENT_SECRET,
+    'grant_type': 'client_credentials',
+}
 
 
 class UserApi(RestApi):
@@ -29,6 +37,15 @@ class UserApi(RestApi):
     }
 
     def list(self, event, context):
+        emails: List[str] = event['pathParameters']['emails']
+        email_qs = 'email:("' + '" OR "'.join(emails) + '")'
+        conn = http.client.HTTPSConnection("")
+        conn.request(
+            'GET', f'${user_url}?q={email_qs}&search_engine=v3', headers=headers
+        )
+        res = conn.getresponse()
+        data = res.read()
+        print(data.decode("utf-8"))
         return {
             'statusCode': 200,
             'body': 'success',
