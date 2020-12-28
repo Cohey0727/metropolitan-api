@@ -16,7 +16,7 @@ project_user_table = boto3.resource('dynamodb').Table(project_user_table_name)
 
 
 class ProjectUserApi(RestApi):
-    detail_key = 'project_id'
+    detail_key = 'user_id'
     default_headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
@@ -27,7 +27,9 @@ class ProjectUserApi(RestApi):
     def list(self, event, context):
         project_id = event['pathParameters'].get('project_id')
         project_data = project_user_table.query(
-            KeyConditionExpression=Key('projectId').eq(project_id)
+            IndexName='projectIdIndex',
+            KeyConditionExpression=Key('type').eq('Member')
+            & Key('projectId').eq(project_id)
         )
         project_users = project_data['Items']
         user_ids = [project_user['userId'] for project_user in project_users]
