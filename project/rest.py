@@ -25,7 +25,7 @@ def get_default_project():
                 'description': 'Development Board',
                 'lists': [
                     {'listId': uuid(), 'title': 'Draft'},
-                    {'listId': uuid(), 'title': 'On Progress'},
+                    {'listId': uuid(), 'title': 'In Progress'},
                     {'listId': uuid(), 'title': 'Review'},
                     {'listId': uuid(), 'title': 'Finish'}
                 ]
