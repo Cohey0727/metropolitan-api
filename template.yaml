@@ -80,6 +80,8 @@ Resources:
       AttributeDefinitions:
         - AttributeName: type
           AttributeType: S
+        - AttributeName: primaryKey
+          AttributeType: S
         - AttributeName: userId
           AttributeType: S
         - AttributeName: projectId
@@ -87,10 +89,16 @@ Resources:
       KeySchema:
         - AttributeName: type
           KeyType: HASH
-        - AttributeName: userId
+        - AttributeName: key
           KeyType: RANGE
       LocalSecondaryIndexes:
         - IndexName: projectIdIndex
+          KeySchema:
+            - AttributeName: type
+              KeyType: HASH
+            - AttributeName: projectId
+              KeyType: RANGE
+        - IndexName: userIdIndex
           KeySchema:
             - AttributeName: type
               KeyType: HASH
@@ -259,6 +267,29 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName:
               Fn::Sub: Projects_${StageName}
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::Sub: ProjectsUsers_${StageName}
+
+  ProjectUserApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: project_user/
+      Handler: rest.lambda_handler
+      Runtime: python3.8
+      Events:
+        ListProjectUsers:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}/users
+            Method: get
+      Environment:
+        Variables:
+          PROJECT_USER_TABLE_NAME:
+            Fn::Sub: ProjectsUsers_${StageName}
+          USER_API_URL:
+            Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/users
+      Policies:
         - DynamoDBCrudPolicy:
             TableName:
               Fn::Sub: ProjectsUsers_${StageName}
