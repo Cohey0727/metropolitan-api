@@ -19,6 +19,10 @@ Parameters:
     MaxLength: 16
     AllowedPattern: ^[A-Za-z_]+$
     ConstraintDescription: "Required. Can be characters and underscore only. No numbers or special characters allowed."
+  RestApiUrl:
+    Type: String
+    Default: "https://ServerlessRestApi.execute-api.AWS.Region.amazonaws.com/Prod"
+    Description: Self reference
   Auth0Domain:
     Type: String
     Default: "cohey0727.auth0.com"
@@ -89,7 +93,7 @@ Resources:
       KeySchema:
         - AttributeName: type
           KeyType: HASH
-        - AttributeName: key
+        - AttributeName: primaryKey
           KeyType: RANGE
       LocalSecondaryIndexes:
         - IndexName: projectIdIndex
@@ -98,14 +102,16 @@ Resources:
               KeyType: HASH
             - AttributeName: projectId
               KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
         - IndexName: userIdIndex
           KeySchema:
             - AttributeName: type
               KeyType: HASH
-            - AttributeName: projectId
+            - AttributeName: userId
               KeyType: RANGE
           Projection:
-            ProjectionType: KEYS_ONLY
+            ProjectionType: ALL
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
@@ -139,7 +145,7 @@ Resources:
             - AttributeName: currentPosition
               KeyType: RANGE
           Projection:
-            ProjectionType: KEYS_ONLY
+            ProjectionType: ALL
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
@@ -288,7 +294,7 @@ Resources:
           PROJECT_USER_TABLE_NAME:
             Fn::Sub: ProjectsUsers_${StageName}
           USER_API_URL:
-            Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/users
+            Fn::Sub: ${RestApiUrl}/users
       Policies:
         - DynamoDBCrudPolicy:
             TableName:

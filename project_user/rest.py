@@ -33,7 +33,7 @@ class ProjectUserApi(RestApi):
         user_ids = [project_user['userId'] for project_user in project_users]
         params = {'user_ids': json.dumps(user_ids)}
         res = requests.get(user_api_url, params=params)
-        return res
+        return {'statusCode': 200, 'body': res.text}
 
 
 lambda_handler = ProjectUserApi().create_handler()

@@ -46,8 +46,9 @@ class ProjectApi(RestApi):
     def list(self, event, context):
         user_id = event['queryStringParameters'].get('user_id')
         user_projects_data = project_user_table.query(
-            KeyConditionExpression=Key('type').eq(
-                'Member') & Key('userId').eq(user_id)
+            IndexName='userIdIndex',
+            KeyConditionExpression=Key('type').eq('Member')
+            & Key('userId').eq(user_id)
         )
         user_projects = user_projects_data.get('Items', [])
         project_ids = [user_project['projectId']
