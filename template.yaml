@@ -194,6 +194,10 @@ Resources:
           AUTH0_API_CLIENT_SECRET: !Ref Auth0CientSecret
           PARAMETER_TABLE_NAME:
             Fn::Sub: Parameters_${StageName}
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::Sub: Parameters_${StageName}
 
   ProjectApi:
     Type: AWS::Serverless::Function
