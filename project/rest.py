@@ -46,7 +46,9 @@ class ProjectApi(RestApi):
     def list(self, event, context):
         user_id = event['queryStringParameters'].get('user_id')
         user_projects_data = project_user_table.query(
-            KeyConditionExpression=Key('type').eq('Member') & Key('userId').eq(user_id)
+            IndexName='userIdIndex',
+            KeyConditionExpression=Key('type').eq('Member')
+            & Key('userId').eq(user_id)
         )
         user_projects = user_projects_data.get('Items', [])
         project_ids = [user_project['projectId']
@@ -69,11 +71,15 @@ class ProjectApi(RestApi):
 
     def create(self, event, context):
         project_id = uuid()
-        new_project = {**get_default_project(), **json.loads(event['body']), 'projectId': project_id}
+        new_project = {**get_default_project(), **
+                       json.loads(event['body']), 'projectId': project_id}
         project_table.put_item(Item=new_project)
 
         user_id = new_project["author"]
-        base_record = {'userId': user_id, 'projectId': project_id}
+        base_record = {
+            'primaryKey': f'{user_id}#{project_id}',
+            'userId': user_id, 'projectId': project_id
+        }
         record_as_member = {'type': 'Member', **base_record}
         record_as_admin = {'type': 'Admin', **base_record}
         project_user_table.put_item(Item=record_as_member)

@@ -19,8 +19,44 @@ Parameters:
     MaxLength: 16
     AllowedPattern: ^[A-Za-z_]+$
     ConstraintDescription: "Required. Can be characters and underscore only. No numbers or special characters allowed."
+  RestApiUrl:
+    Type: String
+    Default: "https://ServerlessRestApi.execute-api.AWS.Region.amazonaws.com/Prod"
+    Description: Self reference
+  Auth0Domain:
+    Type: String
+    Default: "cohey0727.auth0.com"
+    Description: Auth0 Domain
+  Auth0CientId:
+    Type: String
+    Description: The Client id of auth0 mangement api. It is used for get users.
+  Auth0CientSecret:
+    Type: String
+    Description: The Client secret of auth0 mangement api. It is used for get users.
 
 Resources:
+  ParametersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: Parameters_${StageName}
+      AttributeDefinitions:
+        - AttributeName: parameterKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: parameterKey
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: True
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      SSESpecification:
+        SSEEnabled: True
+      StreamSpecification:
+        StreamViewType: KEYS_ONLY
+
   ProjectsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -48,14 +84,16 @@ Resources:
       AttributeDefinitions:
         - AttributeName: type
           AttributeType: S
+        - AttributeName: primaryKey
+          AttributeType: S
         - AttributeName: userId
           AttributeType: S
         - AttributeName: projectId
-          AttributeType: S          
+          AttributeType: S
       KeySchema:
         - AttributeName: type
           KeyType: HASH
-        - AttributeName: userId
+        - AttributeName: primaryKey
           KeyType: RANGE
       LocalSecondaryIndexes:
         - IndexName: projectIdIndex
@@ -65,7 +103,15 @@ Resources:
             - AttributeName: projectId
               KeyType: RANGE
           Projection:
-            ProjectionType: KEYS_ONLY
+            ProjectionType: ALL
+        - IndexName: userIdIndex
+          KeySchema:
+            - AttributeName: type
+              KeyType: HASH
+            - AttributeName: userId
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
@@ -99,7 +145,7 @@ Resources:
             - AttributeName: currentPosition
               KeyType: RANGE
           Projection:
-            ProjectionType: KEYS_ONLY
+            ProjectionType: ALL
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
@@ -128,6 +174,26 @@ Resources:
         WriteCapacityUnits: 5
       SSESpecification:
         SSEEnabled: True
+
+  UserApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: user/
+      Handler: rest.lambda_handler
+      Runtime: python3.8
+      Events:
+        ListUser:
+          Type: Api
+          Properties:
+            Path: /users
+            Method: get
+      Environment:
+        Variables:
+          AUTH0_DOMAIN: !Ref Auth0Domain
+          AUTH0_API_CLIENT_ID: !Ref Auth0CientId
+          AUTH0_API_CLIENT_SECRET: !Ref Auth0CientSecret
+          PARAMETER_TABLE_NAME:
+            Fn::Sub: Parameters_${StageName}
 
   ProjectApi:
     Type: AWS::Serverless::Function
@@ -207,6 +273,29 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName:
               Fn::Sub: Projects_${StageName}
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::Sub: ProjectsUsers_${StageName}
+
+  ProjectUserApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: project_user/
+      Handler: rest.lambda_handler
+      Runtime: python3.8
+      Events:
+        ListProjectUsers:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}/users
+            Method: get
+      Environment:
+        Variables:
+          PROJECT_USER_TABLE_NAME:
+            Fn::Sub: ProjectsUsers_${StageName}
+          USER_API_URL:
+            Fn::Sub: ${RestApiUrl}/users
+      Policies:
         - DynamoDBCrudPolicy:
             TableName:
               Fn::Sub: ProjectsUsers_${StageName}
