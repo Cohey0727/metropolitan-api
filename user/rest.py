@@ -74,7 +74,7 @@ def get_access_token():
     access_token = json.loads(res.text)['access_token']
     datetime_now = datetime.now()
     ttl_time = datetime_now + timedelta(days=1)
-    ttl = str(int(ttl_time.timestamp()))
+    ttl = int(ttl_time.timestamp())
     access_token_data = {**params, 'value': access_token, 'ttl': ttl}
     parameter_table.put_item(Item=access_token_data)
     return access_token
