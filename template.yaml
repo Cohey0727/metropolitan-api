@@ -288,11 +288,16 @@ Resources:
       Handler: rest.lambda_handler
       Runtime: python3.8
       Events:
-        ListProjectUsers:
+        ListProjectUser:
           Type: Api
           Properties:
             Path: /projects/{project_id}/users
             Method: get
+        CreateProjectUser:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}/users
+            Method: post
       Environment:
         Variables:
           PROJECT_USER_TABLE_NAME:
