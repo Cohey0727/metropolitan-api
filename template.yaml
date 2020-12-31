@@ -206,7 +206,7 @@ Resources:
       Handler: rest.search_handler
       Runtime: python3.8
       Events:
-        ListUser:
+        ListSearchUser:
           Type: Api
           Properties:
             Path: /users/search

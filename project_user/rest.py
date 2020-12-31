@@ -39,15 +39,17 @@ class ProjectUserApi(RestApi):
 
     def create(self, event, context):
         project_id = event['pathParameters'].get('project_id')
-        project_user_data = json.loads(event['body'])
-        user_id = project_user_data['user_id']
+        body = json.loads(event['body'])
+        user_id = body['user_id']
+        data_type = body['type']
         record_data = {
-            **project_user_data,
+            'type': data_type,
             'primaryKey': f'{user_id}#{project_id}',
-            'projectId': project_id
+            'projectId': project_id,
+            'userId': user_id
         }
         project_user_table.put_item(Item=record_data)
-        return {'statusCode': 200, 'body': json.dumps(project_user_data)}
+        return {'statusCode': 200, 'body': json.dumps({'message': 'success'})}
 
 
 lambda_handler = ProjectUserApi().create_handler()

@@ -64,7 +64,7 @@ class UserSearchApi(RestApi):
     }
 
     def list(self, event, context):
-        email = event['queryStringParameters']['email']
+        email: str = event['queryStringParameters']['email']
         query = f'email:*{email}*'
         token = get_access_token()
         headers = {'authorization': f'Bearer {token}'}
