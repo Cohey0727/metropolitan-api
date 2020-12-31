@@ -55,6 +55,24 @@ class UserApi(RestApi):
         }
 
 
+class UserSearchApi(RestApi):
+    default_headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+        "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,X-Amz-Security-Token,Authorization,X-Api-Key,X-Requested-With,Accept,Access-Control-Allow-Methods,Access-Control-Allow-Origin,Access-Control-Allow-Headers",
+        "X-Requested-With": "*"
+    }
+
+    def list(self, event, context):
+        email = event['queryStringParameters']['email']
+        query = f'email:*{email}*'
+        token = get_access_token()
+        headers = {'authorization': f'Bearer {token}'}
+        url = f'{user_url}?q={query}'
+        res = requests.get(url, headers=headers)
+        return {'statusCode': 200, 'body': res.text}
+
+
 def get_access_token():
     params = {'parameterKey': 'Auth0AccessToken'}
     access_token_data = parameter_table.get_item(Key=params).get('Item')
@@ -81,3 +99,4 @@ def get_access_token():
 
 
 lambda_handler = UserApi().create_handler()
+search_handler = UserSearchApi().create_handler()
