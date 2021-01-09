@@ -13,7 +13,7 @@ logger = logging.getLogger()
 logger.setLevel('INFO')
 
 table_name = os.environ.get('TABLE_NAME')
-ticket_talble = boto3.resource('dynamodb').Table(table_name)
+ticket_table = boto3.resource('dynamodb').Table(table_name)
 
 
 def deserialize_ticket(data: dict) -> dict:
@@ -56,7 +56,7 @@ class TicketApi(RestApi):
 
     def list(self, event, context):
         project_id = event['pathParameters'].get('project_id')
-        ticket_data = ticket_talble.query(
+        ticket_data = ticket_table.query(
             KeyConditionExpression=Key('projectId').eq(project_id)
         )
         tickets = ticket_data['Items']
@@ -70,7 +70,7 @@ class TicketApi(RestApi):
         project_id = event['pathParameters'].get('project_id')
         ticket_data = deserialize_ticket(json.loads(event['body']))
         ticket_id = uuid()
-        ticket_talble.put_item(
+        ticket_table.put_item(
             Item={
                 **ticket_data,
                 'projectId': project_id,
@@ -78,7 +78,7 @@ class TicketApi(RestApi):
             },
         )
 
-        response = ticket_talble.query(
+        response = ticket_table.query(
             KeyConditionExpression=Key('projectId').eq(
                 project_id) & Key('ticketId').eq(ticket_id)
         )['Items'][0]
@@ -106,7 +106,7 @@ class TicketApi(RestApi):
 
         update_expression = update_expression[:-1]
 
-        response = ticket_talble.update_item(
+        response = ticket_table.update_item(
             Key={'projectId': project_id, 'ticketId': ticket_id},
             ExpressionAttributeNames=expression_names,
             UpdateExpression=update_expression,
@@ -122,7 +122,7 @@ class TicketApi(RestApi):
     def destory(self, event, context):
         project_id = event['pathParameters'].get('project_id')
         ticket_id = event['pathParameters'].get('ticket_id')
-        ticket_talble.delete_item(
+        ticket_table.delete_item(
             Key={'projectId': project_id, 'ticketId': ticket_id},
         )
 

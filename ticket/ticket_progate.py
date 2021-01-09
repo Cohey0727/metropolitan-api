@@ -13,7 +13,7 @@ connection_table_name = os.environ.get('CONNECTION_TABLE_NAME')
 connection_talble = boto3.resource('dynamodb').Table(connection_table_name)
 
 ticket_table_name = os.environ.get('TICKET_TABLE_NAME')
-ticket_talble = boto3.resource('dynamodb').Table(ticket_table_name)
+ticket_table = boto3.resource('dynamodb').Table(ticket_table_name)
 
 ws_endpoint = os.environ.get('WS_ENDPOINT')
 tickets_ws = boto3.client('apigatewaymanagementapi', endpoint_url=ws_endpoint)
@@ -51,7 +51,7 @@ def lambda_handler(event, context):
 
 
 def progate_project_tickets(project_id: int, batch):
-    tickets = ticket_talble.query(
+    tickets = ticket_table.query(
         KeyConditionExpression=Key('projectId').eq(project_id)
     )
 

@@ -17,10 +17,23 @@ project_user_table = boto3.resource('dynamodb').Table(project_user_table_name)
 
 
 def get_default_project():
+    board_id1 = uuid()
+    board_id2 = uuid()
     return {
         'boards': [
             {
-                'boardId': uuid(),
+                'boardId': board_id1,
+                'title': 'Backlog',
+                'description': 'Backlog Board',
+                'lists': [
+                    {'listId': uuid(), 'title': 'Draft'},
+                    {'listId': uuid(), 'title': 'In Progress'},
+                    {'listId': uuid(), 'title': 'Review'},
+                    {'listId': uuid(), 'title': 'Finish'}
+                ]
+            },
+            {
+                'boardId': board_id2,
                 'title': 'Development',
                 'description': 'Development Board',
                 'lists': [
@@ -30,6 +43,9 @@ def get_default_project():
                     {'listId': uuid(), 'title': 'Finish'}
                 ]
             }
+        ],
+        'flow': [
+            {'input': board_id2, 'output': board_id1}
         ]
     }
 
