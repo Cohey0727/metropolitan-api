@@ -49,7 +49,7 @@ class BoardFinishApi(RestApi):
         )['Items']
 
         flow = project['flow']
-        link = (link for link in flow if link['output'] == board_id)
+        link = next(lambda item: item['output'] == board_id, flow)
         next_board_id = link['input']
         next_board = next(
             filter(lambda board: board['boardId'] == next_board_id, boards), None)
