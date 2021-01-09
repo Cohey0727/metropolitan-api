@@ -49,17 +49,18 @@ class BoardFinishApi(RestApi):
         )['Items']
 
         flow = project['flow']
-        link = next(lambda item: item['output'] == board_id, flow)
-        next_board_id = link['input']
+        link = next(
+            filter(lambda item: item['output'] == board_id, flow), None)
+
+        next_board_id = link['input'] if link else 'Completed'
         next_board = next(
             filter(lambda board: board['boardId'] == next_board_id, boards), None)
 
-        destination_position = 'board#Completed::list#Completed'
-
+        next_list_id = 'Completed'
         if next_board:
             next_list_id = next_board['lists'][-1]['listId']
-            destination_position = create_position_str(
-                next_board_id, next_list_id)
+
+        destination_position = create_position_str(next_board_id, next_list_id)
 
         for ticket in target_tickets:
             ticket['currentPosition'] = destination_position
