@@ -181,6 +181,7 @@ Resources:
       CodeUri: user/
       Handler: rest.lambda_handler
       Runtime: python3.8
+      Timeout: 15
       Events:
         ListUser:
           Type: Api
@@ -205,6 +206,7 @@ Resources:
       CodeUri: user/
       Handler: rest.search_handler
       Runtime: python3.8
+      Timeout: 15
       Events:
         ListSearchUser:
           Type: Api
@@ -311,6 +313,7 @@ Resources:
       CodeUri: project_user/
       Handler: rest.lambda_handler
       Runtime: python3.8
+      Timeout: 15
       Events:
         ListProjectUser:
           Type: Api

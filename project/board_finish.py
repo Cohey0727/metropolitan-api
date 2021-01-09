@@ -58,7 +58,7 @@ class BoardFinishApi(RestApi):
 
         next_list_id = 'Completed'
         if next_board:
-            next_list_id = next_board['lists'][-1]['listId']
+            next_list_id = next_board['lists'][0]['listId']
 
         destination_position = create_position_str(next_board_id, next_list_id)
 
