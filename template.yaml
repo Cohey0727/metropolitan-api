@@ -369,6 +369,32 @@ Resources:
             TableName:
               Fn::Sub: ProjectTickets_${StageName}
 
+  BoardFinishApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: project/
+      Handler: board_finish.lambda_handler
+      Runtime: python3.8
+      Events:
+        BoardFinish:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}/boards/{board_id}/finish
+            Method: post
+      Environment:
+        Variables:
+          PROJECT_TABLE_NAME:
+            Fn::Sub: Projects_${StageName}
+          TICKET_TABLE_NAME:
+            Fn::Sub: ProjectTickets_${StageName}
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::Sub: Projects_${StageName}
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::Sub: ProjectTickets_${StageName}
+
   TicketsWebSocket:
     Type: AWS::ApiGatewayV2::Api
     Properties:
