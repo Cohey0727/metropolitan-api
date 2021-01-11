@@ -209,15 +209,8 @@ Resources:
       Environment:
         Variables:
           AUTH0_DOMAIN: !Ref Auth0Domain
-          AUTH0_API_CLIENT_ID: !Ref Auth0CientId
-          AUTH0_API_CLIENT_SECRET: !Ref Auth0CientSecret
           AUTH0_ACCESS_TOKEN_ARN: !Ref GetAuth0AccessToken
-          PARAMETER_TABLE_NAME:
-            Fn::Sub: Parameters_${StageName}
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName:
-              Fn::Sub: Parameters_${StageName}
         - LambdaInvokePolicy:
             FunctionName: !Ref GetAuth0AccessToken
 
@@ -237,14 +230,8 @@ Resources:
       Environment:
         Variables:
           AUTH0_DOMAIN: !Ref Auth0Domain
-          AUTH0_API_CLIENT_ID: !Ref Auth0CientId
-          AUTH0_API_CLIENT_SECRET: !Ref Auth0CientSecret
-          PARAMETER_TABLE_NAME:
-            Fn::Sub: Parameters_${StageName}
+          AUTH0_ACCESS_TOKEN_ARN: !Ref GetAuth0AccessToken
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName:
-              Fn::Sub: Parameters_${StageName}
         - LambdaInvokePolicy:
             FunctionName: !Ref GetAuth0AccessToken
 
@@ -350,14 +337,17 @@ Resources:
             Method: post
       Environment:
         Variables:
-          PROJECT_USER_TABLE_NAME:
-            Fn::Sub: ProjectsUsers_${StageName}
-          USER_API_URL:
-            Fn::Sub: ${RestApiUrl}/users
+          AUTH0_DOMAIN: !Ref Auth0Domain
+          AUTH0_ACCESS_TOKEN_ARN: !Ref GetAuth0AccessToken
+          PROJECT_TABLE_NAME:
+            Fn::Sub: Projects_${StageName}
       Policies:
         - DynamoDBCrudPolicy:
             TableName:
-              Fn::Sub: ProjectsUsers_${StageName}
+              Fn::Sub: Projects_${StageName}
+        - LambdaInvokePolicy:
+            FunctionName: !Ref GetAuth0AccessToken
+
 
   TicketApi:
     Type: AWS::Serverless::Function
