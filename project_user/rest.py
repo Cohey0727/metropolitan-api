@@ -12,7 +12,6 @@ logger.setLevel('INFO')
 
 AUTH0_DOMAIN = os.environ.get('AUTH0_DOMAIN')
 AUTH0_ACCESS_TOKEN_ARN = os.environ.get('AUTH0_ACCESS_TOKEN_ARN')
-role_user_url = '/api/v2/roles/{role_id}/users'
 
 project_table_name = os.environ.get('PROJECT_TABLE_NAME')
 project_table = boto3.resource('dynamodb').Table(project_table_name)
@@ -34,7 +33,7 @@ class ProjectUserApi(RestApi):
         params = {'projectId': project_id}
         project = project_table.get_item(Key=params)['Item']
         role_id = project['roleId']
-        url = role_user_url.format(role_id=role_id)
+        url = f'https://{AUTH0_DOMAIN}/api/v2/roles/{role_id}/users'
         token_res = lambda_client.invoke(
             FunctionName=AUTH0_ACCESS_TOKEN_ARN, InvocationType='RequestResponse')
         token = json.loads(token_res['Payload'].read().decode())
@@ -56,9 +55,9 @@ class ProjectUserApi(RestApi):
         token = json.loads(token_res['Payload'].read().decode())
         headers = {'authorization': f'Bearer {token}'}
 
-        url = role_user_url.format(role_id=role_id)
+        url = f'https://{AUTH0_DOMAIN}/api/v2/roles/{role_id}/users'
         data = {'users': [user_id]}
-        requests.post(url, data, headers=headers)
+        requests.post(url, json=data, headers=headers)
 
         return {'statusCode': 200, 'body': json.dumps({'message': 'success'})}
 
