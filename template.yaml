@@ -76,50 +76,6 @@ Resources:
       StreamSpecification:
         StreamViewType: KEYS_ONLY
 
-  ProjectsUsersTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName:
-        Fn::Sub: ProjectsUsers_${StageName}
-      AttributeDefinitions:
-        - AttributeName: type
-          AttributeType: S
-        - AttributeName: primaryKey
-          AttributeType: S
-        - AttributeName: userId
-          AttributeType: S
-        - AttributeName: projectId
-          AttributeType: S
-      KeySchema:
-        - AttributeName: type
-          KeyType: HASH
-        - AttributeName: primaryKey
-          KeyType: RANGE
-      LocalSecondaryIndexes:
-        - IndexName: projectIdIndex
-          KeySchema:
-            - AttributeName: type
-              KeyType: HASH
-            - AttributeName: projectId
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-        - IndexName: userIdIndex
-          KeySchema:
-            - AttributeName: type
-              KeyType: HASH
-            - AttributeName: userId
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-      ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
-      SSESpecification:
-        SSEEnabled: True
-      StreamSpecification:
-        StreamViewType: KEYS_ONLY
-
   TicketsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -269,53 +225,15 @@ Resources:
             Method: delete
       Environment:
         Variables:
+          AUTH0_ACCESS_TOKEN_ARN: !Ref GetAuth0AccessToken
           PROJECT_TABLE_NAME:
             Fn::Sub: Projects_${StageName}
-          PROJECT_USER_TABLE_NAME:
-            Fn::Sub: ProjectsUsers_${StageName}
       Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref GetAuth0AccessToken
         - DynamoDBCrudPolicy:
             TableName:
               Fn::Sub: Projects_${StageName}
-        - DynamoDBCrudPolicy:
-            TableName:
-              Fn::Sub: ProjectsUsers_${StageName}
-
-  UserProjectApi:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: user_project/
-      Handler: rest.lambda_handler
-      Runtime: python3.8
-      Events:
-        ListUserProjects:
-          Type: Api
-          Properties:
-            Path: /users/{user_id}/projects
-            Method: get
-        JoinUserProject:
-          Type: Api
-          Properties:
-            Path: /users/{user_id}/projects/{project_id}
-            Method: put
-        RemoveUserProject:
-          Type: Api
-          Properties:
-            Path: /users/{user_id}/projects/{project_id}
-            Method: delete
-      Environment:
-        Variables:
-          PROJECT_TABLE_NAME:
-            Fn::Sub: Projects_${StageName}
-          PROJECT_USER_TABLE_NAME:
-            Fn::Sub: ProjectsUsers_${StageName}
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName:
-              Fn::Sub: Projects_${StageName}
-        - DynamoDBCrudPolicy:
-            TableName:
-              Fn::Sub: ProjectsUsers_${StageName}
 
   ProjectUserApi:
     Type: AWS::Serverless::Function
@@ -347,7 +265,6 @@ Resources:
               Fn::Sub: Projects_${StageName}
         - LambdaInvokePolicy:
             FunctionName: !Ref GetAuth0AccessToken
-
 
   TicketApi:
     Type: AWS::Serverless::Function

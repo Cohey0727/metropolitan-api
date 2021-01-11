@@ -57,9 +57,8 @@ class ProjectUserApi(RestApi):
 
         url = f'https://{AUTH0_DOMAIN}/api/v2/roles/{role_id}/users'
         data = {'users': [user_id]}
-        requests.post(url, json=data, headers=headers)
-
-        return {'statusCode': 200, 'body': json.dumps({'message': 'success'})}
+        res = requests.post(url, json=data, headers=headers)
+        return {'statusCode': res.status_code, 'body': json.dumps({'message': 'success'})}
 
 
 lambda_handler = ProjectUserApi().create_handler()
