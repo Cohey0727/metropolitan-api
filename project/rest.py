@@ -74,7 +74,7 @@ class ProjectApi(RestApi):
         roles = json.loads(res.text)
 
         project_ids = [
-            role.split(':')[1] for role in roles if role.split(':')[0] == 'project'
+            role['name'].split(':')[1] for role in roles if role['name'].split(':')[0] == 'project'
         ]
 
         projects = []

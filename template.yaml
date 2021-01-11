@@ -19,10 +19,6 @@ Parameters:
     MaxLength: 16
     AllowedPattern: ^[A-Za-z_]+$
     ConstraintDescription: "Required. Can be characters and underscore only. No numbers or special characters allowed."
-  RestApiUrl:
-    Type: String
-    Default: "https://ServerlessRestApi.execute-api.AWS.Region.amazonaws.com/Prod"
-    Description: Self reference
   Auth0Domain:
     Type: String
     Default: "cohey0727.auth0.com"
@@ -225,6 +221,7 @@ Resources:
             Method: delete
       Environment:
         Variables:
+          AUTH0_DOMAIN: !Ref Auth0Domain
           AUTH0_ACCESS_TOKEN_ARN: !Ref GetAuth0AccessToken
           PROJECT_TABLE_NAME:
             Fn::Sub: Projects_${StageName}
