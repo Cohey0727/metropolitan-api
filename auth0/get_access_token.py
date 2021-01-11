@@ -4,9 +4,6 @@ import json
 import logging
 import os
 from datetime import datetime, timedelta
-from boto3.dynamodb.conditions import Key
-from aws_lambda_rest_api import RestApi
-
 
 logger = logging.getLogger()
 logger.setLevel('INFO')

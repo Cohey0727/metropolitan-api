@@ -175,6 +175,24 @@ Resources:
       SSESpecification:
         SSEEnabled: True
 
+  GetAuth0AccessToken:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: auth0/
+      Handler: get_access_token.lambda_handler
+      Runtime: python3.8
+      Environment:
+        Variables:
+          AUTH0_DOMAIN: !Ref Auth0Domain
+          AUTH0_API_CLIENT_ID: !Ref Auth0CientId
+          AUTH0_API_CLIENT_SECRET: !Ref Auth0CientSecret
+          PARAMETER_TABLE_NAME:
+            Fn::Sub: Parameters_${StageName}
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::Sub: Parameters_${StageName}
+
   UserApi:
     Type: AWS::Serverless::Function
     Properties:
@@ -193,12 +211,15 @@ Resources:
           AUTH0_DOMAIN: !Ref Auth0Domain
           AUTH0_API_CLIENT_ID: !Ref Auth0CientId
           AUTH0_API_CLIENT_SECRET: !Ref Auth0CientSecret
+          AUTH0_ACCESS_TOKEN_ARN: !Ref GetAuth0AccessToken
           PARAMETER_TABLE_NAME:
             Fn::Sub: Parameters_${StageName}
       Policies:
         - DynamoDBCrudPolicy:
             TableName:
               Fn::Sub: Parameters_${StageName}
+        - LambdaInvokePolicy:
+            FunctionName: !Ref GetAuth0AccessToken
 
   UserSearchApi:
     Type: AWS::Serverless::Function
@@ -224,6 +245,8 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName:
               Fn::Sub: Parameters_${StageName}
+        - LambdaInvokePolicy:
+            FunctionName: !Ref GetAuth0AccessToken
 
   ProjectApi:
     Type: AWS::Serverless::Function
