@@ -93,11 +93,10 @@ class ProjectApi(RestApi):
         return {'statusCode': 200, 'body': json.dumps(project)}
 
     def create(self, event, context):
-        # create project
+        # create project data
         project_id = uuid()
         new_project = {**get_default_project(), **
                        json.loads(event['body']), 'projectId': project_id}
-        project_table.put_item(Item=new_project)
 
         # prepare meta
         token_res = lambda_client.invoke(
@@ -119,6 +118,10 @@ class ProjectApi(RestApi):
         role_data = {'users': [new_project["author"]]}
         role_user_url = f'https://{AUTH0_DOMAIN}/api/v2/roles/{role["id"]}/users'
         res = requests.post(role_user_url, json=role_data, headers=headers)
+
+        # create project record
+        new_project['roleId'] = role['id']
+        project_table.put_item(Item=new_project)
 
         return {'statusCode': 200, 'body': json.dumps(new_project)}
 
