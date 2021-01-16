@@ -119,7 +119,7 @@ class TicketApi(RestApi):
             'body': json.dumps(serialize_ticket(response['Attributes']))
         }
 
-    def destory(self, event, context):
+    def destroy(self, event, context):
         project_id = event['pathParameters'].get('project_id')
         ticket_id = event['pathParameters'].get('ticket_id')
         ticket_table.delete_item(
