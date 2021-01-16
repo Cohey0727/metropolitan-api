@@ -10,9 +10,13 @@ from aws_lambda_rest_api import RestApi
 logger = logging.getLogger()
 logger.setLevel('INFO')
 
-user_api_url = os.environ.get('USER_API_URL')
-project_user_table_name = os.environ.get('PROJECT_USER_TABLE_NAME')
-project_user_table = boto3.resource('dynamodb').Table(project_user_table_name)
+AUTH0_DOMAIN = os.environ.get('AUTH0_DOMAIN')
+AUTH0_ACCESS_TOKEN_ARN = os.environ.get('AUTH0_ACCESS_TOKEN_ARN')
+
+project_table_name = os.environ.get('PROJECT_TABLE_NAME')
+project_table = boto3.resource('dynamodb').Table(project_table_name)
+
+lambda_client = boto3.client('lambda')
 
 
 class ProjectUserApi(RestApi):
@@ -26,30 +30,52 @@ class ProjectUserApi(RestApi):
 
     def list(self, event, context):
         project_id = event['pathParameters'].get('project_id')
-        project_data = project_user_table.query(
-            IndexName='projectIdIndex',
-            KeyConditionExpression=Key('type').eq('Member')
-            & Key('projectId').eq(project_id)
-        )
-        project_users = project_data['Items']
-        user_ids = [project_user['userId'] for project_user in project_users]
-        params = {'user_ids': json.dumps(user_ids)}
-        res = requests.get(user_api_url, params=params)
+        params = {'projectId': project_id}
+        project = project_table.get_item(Key=params)['Item']
+        role_id = project['roleId']
+        url = f'https://{AUTH0_DOMAIN}/api/v2/roles/{role_id}/users'
+        token_res = lambda_client.invoke(
+            FunctionName=AUTH0_ACCESS_TOKEN_ARN, InvocationType='RequestResponse')
+        token = json.loads(token_res['Payload'].read().decode())
+        headers = {'authorization': f'Bearer {token}'}
+        res = requests.get(url, headers=headers)
         return {'statusCode': 200, 'body': res.text}
 
     def create(self, event, context):
         project_id = event['pathParameters'].get('project_id')
+        params = {'projectId': project_id}
+        project = project_table.get_item(Key=params)['Item']
+        role_id = project['roleId']
+
         body = json.loads(event['body'])
         user_id = body['user_id']
-        data_type = body['type']
-        record_data = {
-            'type': data_type,
-            'primaryKey': f'{user_id}#{project_id}',
-            'projectId': project_id,
-            'userId': user_id
-        }
-        project_user_table.put_item(Item=record_data)
-        return {'statusCode': 200, 'body': json.dumps({'message': 'success'})}
+        params = {'users': [user_id]}
+        token_res = lambda_client.invoke(
+            FunctionName=AUTH0_ACCESS_TOKEN_ARN, InvocationType='RequestResponse')
+        token = json.loads(token_res['Payload'].read().decode())
+        headers = {'authorization': f'Bearer {token}'}
+
+        url = f'https://{AUTH0_DOMAIN}/api/v2/roles/{role_id}/users'
+        data = {'users': [user_id]}
+        res = requests.post(url, json=data, headers=headers)
+        return {'statusCode': res.status_code, 'body': json.dumps({'message': 'success'})}
+
+    def destroy(self, event, context):
+        project_id = event['pathParameters']['project_id']
+        user_id = event['pathParameters']['user_id']
+
+        params = {'projectId': project_id}
+        project = project_table.get_item(Key=params)['Item']
+        role_id = project['roleId']
+        params = {'users': [user_id]}
+        token_res = lambda_client.invoke(
+            FunctionName=AUTH0_ACCESS_TOKEN_ARN, InvocationType='RequestResponse')
+        token = json.loads(token_res['Payload'].read().decode())
+        headers = {'authorization': f'Bearer {token}'}
+
+        url = f'https://{AUTH0_DOMAIN}/api/v2/users/{user_id}/roles'
+        data = {'roles': [role_id]}
+        requests.delete(url, data=data, headers=headers)
 
 
 lambda_handler = ProjectUserApi().create_handler()
