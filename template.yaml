@@ -250,6 +250,11 @@ Resources:
           Properties:
             Path: /projects/{project_id}/users
             Method: post
+        DeleteProjectUser:
+          Type: Api
+          Properties:
+            Path: /projects/{project_id}/users/{user_id}
+            Method: delete
       Environment:
         Variables:
           AUTH0_DOMAIN: !Ref Auth0Domain
