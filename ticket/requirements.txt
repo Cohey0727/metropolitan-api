@@ -1,4 +1,4 @@
-aws-lambda-rest-api==1.0.9
+aws-lambda-rest-api==1.0.12
 boto3
 requests
 shortuuid==1.0.1

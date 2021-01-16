@@ -154,7 +154,7 @@ class ProjectApi(RestApi):
             'body': json.dumps(response['Attributes'])
         }
 
-    def destory(self, event, context):
+    def destroy(self, event, context):
         project_id = event['pathParameters'].get('project_id')
         params = {'projectId': project_id}
         project_table.delete_item(Key=params)
