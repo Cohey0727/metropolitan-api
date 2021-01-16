@@ -61,5 +61,23 @@ class ProjectUserApi(RestApi):
 
         return {'statusCode': 200, 'body': json.dumps({'message': 'success'})}
 
+    def destroy(self, event, context):
+        project_id = event['pathParameters'].get('project_id')
+        params = {'projectId': project_id}
+        project = project_table.get_item(Key=params)['Item']
+        role_id = project['roleId']
+
+        body = json.loads(event['body'])
+        user_id = body['user_id']
+        params = {'users': [user_id]}
+        token_res = lambda_client.invoke(
+            FunctionName=AUTH0_ACCESS_TOKEN_ARN, InvocationType='RequestResponse')
+        token = json.loads(token_res['Payload'].read().decode())
+        headers = {'authorization': f'Bearer {token}'}
+
+        url = f'https://{AUTH0_DOMAIN}/api/v2/users/{user_id}/roles'
+        data = {'roles': [role_id]}
+        requests.post(url, json=data, headers=headers)
+
 
 lambda_handler = ProjectUserApi().create_handler()
