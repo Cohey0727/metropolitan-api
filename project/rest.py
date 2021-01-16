@@ -1,4 +1,5 @@
 import boto3
+import requests
 import json
 import logging
 import os
@@ -9,11 +10,14 @@ from boto3.dynamodb.conditions import Attr, Key
 logger = logging.getLogger()
 logger.setLevel('INFO')
 
+
+AUTH0_DOMAIN = os.environ.get('AUTH0_DOMAIN')
+AUTH0_ACCESS_TOKEN_ARN = os.environ.get('AUTH0_ACCESS_TOKEN_ARN')
+
 project_table_name = os.environ.get('PROJECT_TABLE_NAME')
 project_table = boto3.resource('dynamodb').Table(project_table_name)
 
-project_user_table_name = os.environ.get('PROJECT_USER_TABLE_NAME')
-project_user_table = boto3.resource('dynamodb').Table(project_user_table_name)
+lambda_client = boto3.client('lambda')
 
 
 def get_default_project():
@@ -61,14 +65,17 @@ class ProjectApi(RestApi):
 
     def list(self, event, context):
         user_id = event['queryStringParameters'].get('user_id')
-        user_projects_data = project_user_table.query(
-            IndexName='userIdIndex',
-            KeyConditionExpression=Key('type').eq('Member')
-            & Key('userId').eq(user_id)
-        )
-        user_projects = user_projects_data.get('Items', [])
-        project_ids = [user_project['projectId']
-                       for user_project in user_projects]
+        url = f'https://{AUTH0_DOMAIN}/api/v2/users/{user_id}/roles'
+        token_res = lambda_client.invoke(
+            FunctionName=AUTH0_ACCESS_TOKEN_ARN, InvocationType='RequestResponse')
+        token = json.loads(token_res['Payload'].read().decode())
+        headers = {'authorization': f'Bearer {token}'}
+        res = requests.get(url, headers=headers)
+        roles = json.loads(res.text)
+
+        project_ids = [
+            role['name'].split(':')[1] for role in roles if role['name'].split(':')[0] == 'project'
+        ]
 
         projects = []
         if project_ids:
@@ -86,20 +93,35 @@ class ProjectApi(RestApi):
         return {'statusCode': 200, 'body': json.dumps(project)}
 
     def create(self, event, context):
+        # create project data
         project_id = uuid()
         new_project = {**get_default_project(), **
                        json.loads(event['body']), 'projectId': project_id}
-        project_table.put_item(Item=new_project)
 
-        user_id = new_project["author"]
-        base_record = {
-            'primaryKey': f'{user_id}#{project_id}',
-            'userId': user_id, 'projectId': project_id
+        # prepare meta
+        token_res = lambda_client.invoke(
+            FunctionName=AUTH0_ACCESS_TOKEN_ARN, InvocationType='RequestResponse')
+        token = json.loads(token_res['Payload'].read().decode())
+        headers = {'authorization': f'Bearer {token}'}
+
+        # create role
+        title = new_project['title']
+        body = {
+            'name': f'project:{project_id}',
+            'description': f'Member of project "{title}"',
         }
-        record_as_member = {'type': 'Member', **base_record}
-        record_as_admin = {'type': 'Admin', **base_record}
-        project_user_table.put_item(Item=record_as_member)
-        project_user_table.put_item(Item=record_as_admin)
+        role_url = f'https://{AUTH0_DOMAIN}/api/v2/roles'
+        res = requests.post(role_url, json=body, headers=headers)
+        role = json.loads(res.text)
+
+        # assign role
+        role_data = {'users': [new_project["author"]]}
+        role_user_url = f'https://{AUTH0_DOMAIN}/api/v2/roles/{role["id"]}/users'
+        res = requests.post(role_user_url, json=role_data, headers=headers)
+
+        # create project record
+        new_project['roleId'] = role['id']
+        project_table.put_item(Item=new_project)
 
         return {'statusCode': 200, 'body': json.dumps(new_project)}
 
