@@ -75,7 +75,8 @@ class ProjectUserApi(RestApi):
 
         url = f'https://{AUTH0_DOMAIN}/api/v2/users/{user_id}/roles'
         data = {'roles': [role_id]}
-        requests.delete(url, data=data, headers=headers)
+        res = requests.delete(url, json=data, headers=headers)
+        return {'statusCode': res.status_code, 'body': res.text}
 
 
 lambda_handler = ProjectUserApi().create_handler()
